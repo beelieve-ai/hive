@@ -1,0 +1,101 @@
+plan: PLAN-000
+prd: PRD-000
+adrs: []
+status: reviewed
+review: passed
+reviewed_by: [context, dag, sizing]
+reviewed_at: 2026-07-03
+milestone_title: smoke-test
+epic:
+  title: "Smoke test: pollen → honey lifecycle exercise"
+  body: |
+    **PRD:** [PRD-000](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md) · **Implements:** PRD-000
+
+    ## Context
+
+    Verify the Hive lifecycle end-to-end (PRD → plan → build → review → merge)
+    with two trivial, dependency-ordered requirements against a throwaway goal.
+    See [PRD-000](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md).
+
+    The work creates two files under a new `smoke/` directory at the repo root:
+
+    - `smoke/pollen.txt` — a fixed sentinel line.
+    - `smoke/honey.txt` — derived by reading `smoke/pollen.txt` from the working
+      tree and prefixing `honey: `.
+
+    The second file genuinely consumes the first, so the tasks are
+    dependency-ordered.
+
+    ## Scope
+
+    - T1 — create `smoke/pollen.txt` (implements PRD-000-R1).
+    - T2 — create `smoke/honey.txt` from `smoke/pollen.txt` (implements PRD-000-R2).
+
+    No artifact of lasting value is expected beyond the smoke-test evidence.
+tasks:
+  - key: T1
+    title: "Create smoke/pollen.txt sentinel file"
+    implements: [PRD-000-R1]
+    adr_refs: []
+    depends_on: []
+    parallel_ok: false
+    body: |
+      **PRD:** [PRD-000](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md) · **Implements:** PRD-000-R1
+
+      ## Context
+
+      Part of the Hive lifecycle smoke test (see
+      [PRD-000 R1](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md#r1-pollen-file)).
+
+      Create a new file `smoke/pollen.txt` at the repo root. The `smoke/`
+      directory does not exist yet and must be created. The file's entire
+      content must be exactly the single line `nectar-42` (a trailing newline
+      is acceptable; the content line must match exactly).
+
+      Do not modify any other files.
+
+      ## Acceptance criteria
+
+      - The file `smoke/pollen.txt` exists.
+      - Its content is exactly the single line `nectar-42`.
+
+      ## Verification
+      - `grep -qx "nectar-42" smoke/pollen.txt` — exits 0
+    issue: null
+  - key: T2
+    title: "Create smoke/honey.txt derived from smoke/pollen.txt"
+    implements: [PRD-000-R2]
+    adr_refs: []
+    depends_on: [T1]
+    parallel_ok: false
+    body: |
+      **PRD:** [PRD-000](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md) · **Implements:** PRD-000-R2
+
+      ## Context
+
+      Part of the Hive lifecycle smoke test (see
+      [PRD-000 R2](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-000-smoke-test.md#r2-honey-file-consuming-r1)).
+
+      This task consumes the file `smoke/pollen.txt` produced earlier, whose
+      content is the single line `nectar-42`.
+
+      Create a new file `smoke/honey.txt` at the repo root whose content is
+      exactly `honey: ` followed by the current content of `smoke/pollen.txt`
+      (i.e. the line `honey: nectar-42`). Produce it **by reading
+      `smoke/pollen.txt` from the working tree**, for example:
+
+      ```bash
+      printf 'honey: %s\n' "$(cat smoke/pollen.txt)" > smoke/honey.txt
+      ```
+
+      Do not hardcode the value blindly and do not modify `smoke/pollen.txt`.
+
+      ## Acceptance criteria
+
+      - The file `smoke/honey.txt` exists.
+      - Its content equals `honey: ` + the actual current content of
+        `smoke/pollen.txt`.
+
+      ## Verification
+      - `test "$(cat smoke/honey.txt)" = "honey: $(cat smoke/pollen.txt)"` — exits 0
+    issue: null
