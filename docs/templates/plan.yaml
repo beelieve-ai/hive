@@ -1,0 +1,26 @@
+plan: PLAN-NNN
+prd: PRD-NNN
+adrs: [ADR-NNNN]
+status: draft | reviewed | materialized
+review: null            # set to "passed" by /comb after all three reviewers pass
+reviewed_by: []
+reviewed_at: null
+milestone_title: ...
+epic:
+  title: ...
+  body: ...
+tasks:
+  - key: T1              # stable key inside the plan; issue number assigned at materialization
+    title: ...
+    implements: [PRD-NNN-R1]   # requirement IDs
+    adr_refs: [ADR-NNNN]
+    depends_on: []       # list of task keys → becomes GH "blocked by"
+    parallel_ok: true
+    body: |
+      ## Context
+      <self-contained: concrete file paths, conventions, links>
+      ## Acceptance criteria
+      - ...
+      ## Verification
+      <command(s) to run, e.g. test invocation>
+    issue: null          # GH issue number, filled at materialization by /comb
