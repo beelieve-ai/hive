@@ -1,7 +1,7 @@
 plan: PLAN-000
 prd: PRD-000
 adrs: []
-status: reviewed
+status: materialized
 review: passed
 reviewed_by: [context, dag, sizing]
 reviewed_at: 2026-07-03
@@ -61,7 +61,7 @@ tasks:
 
       ## Verification
       - `grep -qx "nectar-42" smoke/pollen.txt` — exits 0
-    issue: null
+    issue: 2
   - key: T2
     title: "Create smoke/honey.txt derived from smoke/pollen.txt"
     implements: [PRD-000-R2]
@@ -98,4 +98,4 @@ tasks:
 
       ## Verification
       - `test "$(cat smoke/honey.txt)" = "honey: $(cat smoke/pollen.txt)"` — exits 0
-    issue: null
+    issue: 3
