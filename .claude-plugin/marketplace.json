@@ -1,0 +1,12 @@
+{
+  "name": "beelieve-ai",
+  "description": "beelieve-ai Claude Code plugins.",
+  "owner": { "name": "beelieve-ai" },
+  "plugins": [
+    {
+      "name": "hive",
+      "source": "./",
+      "description": "AI-driven development lifecycle for Claude Code."
+    }
+  ]
+}
