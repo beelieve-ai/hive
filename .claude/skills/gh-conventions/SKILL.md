@@ -73,6 +73,10 @@ Create tasks in **topological order** (dependencies first) so every
 `--blocked-by` value references an already-existing issue number. Omit
 `--blocked-by` entirely for tasks with no dependencies.
 
+Bodies are always multiline — pass them with `--body-file <file>` (write
+the body to a temp file first) instead of `--body "..."`, which corrupts
+under shell quoting. Stdout stays the same single-URL line.
+
 ### Edit dependencies / parent
 
 ```bash
@@ -92,6 +96,12 @@ gh issue list --milestone "<milestone title>" --state all --json number,title,st
 All eight fields are required: epic discovery needs `issueType` + `labels`,
 task-set filtering needs `parent`, unblocking-most-first selection needs
 `blocking`, and readiness needs `state` + `blockedBy`.
+
+Shape caveat (verified live): `blockedBy` and `blocking` are **nested
+objects** `{"nodes": [{number, state, ...}], "totalCount": N}`, not flat
+arrays — on both `gh issue list` and `gh issue view`. Read blocker numbers
+with `.blockedBy.nodes[].number`; a naive `.blockedBy[].number` jq fails.
+`parent` is an object (`.parent.number`) or null.
 
 ## Issue/PR number capture (the one sanctioned --json exception)
 

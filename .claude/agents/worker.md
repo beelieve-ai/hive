@@ -34,7 +34,9 @@ execution).
    git switch -c issue/<n>-<slug>
    ```
 
-   The slug is a short kebab-case form of the issue title.
+   The orchestrator hands you the exact branch name; if it somehow did
+   not, derive the slug deterministically from the issue title
+   (lowercase, non-alphanumerics → hyphens, collapse repeats, trim).
 
 3. **Implement.** Make the smallest change that satisfies every acceptance
    criterion, following the repo's existing conventions. Do not touch

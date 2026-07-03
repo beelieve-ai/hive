@@ -191,7 +191,7 @@ Issue bodies link to the docs via full
 1. `git switch main && git pull --ff-only origin main` (never commit on a
    stale main).
 2. Commit the reviewed plan.yaml (and the PRD if its file changed), e.g.
-   `docs(plan): add PLAN-NNN for $ARGUMENTS`.
+   `docs(plans): add PLAN-NNN for $ARGUMENTS`.
 3. `git push origin main`. If the push fails, stop and report — do not
    create issues against unpushed docs.
 
@@ -289,7 +289,7 @@ milestone is refused.
 Sync main again if anything was merged meanwhile
 (`git switch main && git pull --ff-only origin main`), then commit the
 write-backs (plan.yaml issue numbers + status, PRD frontmatter), e.g.
-`docs(plan): materialize PLAN-NNN into milestone <title>`, and
+`docs(plans): materialize PLAN-NNN into milestone <title>`, and
 `git push origin main`.
 
 ## Final report

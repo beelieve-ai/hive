@@ -116,13 +116,17 @@ branch from a fresh tree.
 ### 3.3 Resume-safety check (never collide)
 
 Probe all three places prior work could live. The branch is
-`issue/<n>-<slug>` where the slug is worker-derived from the title, so
-probe by pattern:
+`issue/<n>-<slug>`; derive the slug deterministically from the issue
+title (lowercase, non-alphanumerics → hyphens, collapse repeats, trim)
+and pass that exact branch name to the worker in 3.4. Probe by pattern:
 
 1. Remote branch: `git ls-remote --heads origin "issue/<n>-*"`
 2. Local branch: `git branch --list "issue/<n>-*"`
-3. Open/merged PR (using the actual branch name found, if any):
-   `gh pr list --head <branch> --state all --json number,state`
+3. PR — probe UNCONDITIONALLY, never gated on a branch existing (a
+   squash-merge with `--delete-branch` removes the branch, so the
+   merged-PR-but-open-issue case has no branch to find):
+   `gh pr list --state all --json number,state,headRefName`, filtered
+   for heads matching `issue/<n>-`.
 
 Decide from the findings — resume or skip, **never re-implement over
 existing work**:
@@ -149,8 +153,9 @@ extract the PRD id and any ADR ids, and resolve them to local paths by
 globbing `docs/prd/<PRD-id>-*.md` and `docs/adr/<ADR-id>-*.md`.
 
 Spawn the **worker** agent (Agent tool) with exactly: the issue number
-`<n>`, the **full issue body**, and the resolved **PRD/ADR file paths**.
-The worker branches `issue/<n>-<slug>` from the fresh main you prepared,
+`<n>`, the **exact branch name** `issue/<n>-<slug>` derived in 3.3, the
+**full issue body**, and the resolved **PRD/ADR file paths**.
+The worker creates that branch from the fresh main you prepared,
 implements, runs the issue's Verification command until green, commits
 (Conventional Commits), and pushes the branch. It creates no PR and never
 merges. It returns a summary of at most 3 lines — record it in your

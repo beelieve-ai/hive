@@ -53,6 +53,8 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
   **PRD:** [PRD-NNN](https://github.com/beelieve-ai/hive/blob/main/docs/prd/PRD-NNN-slug.md) · **Implements:** PRD-NNN-R1 · **ADR:** ADR-NNNN
   ```
 
+  The `· **ADR:** ...` segment is omitted when no ADR constrains the task.
+
 - **Doc → Issues**: PRD frontmatter gets `milestone` + `epic_issue` at
   `/comb` materialization.
 - **ADRs are append-only**: never edit an accepted ADR's decision —
