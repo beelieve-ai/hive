@@ -1,7 +1,7 @@
 ---
 id: PRD-000
 title: Smoke test
-status: planned
+status: implemented
 created: 2026-07-03
 research: []
 adrs: []
