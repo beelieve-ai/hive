@@ -43,6 +43,11 @@ all of the following:
 - [ ] **Acceptance criteria** — measurable, checkable statements of done.
 - [ ] **Verification section** — see below.
 
+A task's `## Context` block may embed a fenced ```mermaid diagram when the
+flow or data shape is easier shown than told — GitHub renders it in the
+issue UI. Optional; fenced ASCII art only when mermaid cannot express the
+figure, never both forms of the same figure.
+
 ## Verification section (mandatory)
 
 Every task body ends with a `## Verification` section containing **runnable
@@ -101,7 +106,9 @@ adr_refs: [ADR-NNNN]         # ADRs whose decisions constrain THIS task ([] when
 ## Template
 
 The planner emits `plan.yaml` from this skeleton (this skill is the source of
-truth — no external template file is required):
+truth — no external template file is required). The epic `body:` may carry a
+mermaid `graph` of the task DAG — a static snapshot at materialization;
+execution state stays in GitHub dependencies, never the doc:
 
 ```yaml
 plan: PLAN-NNN
@@ -114,7 +121,8 @@ reviewed_at: null
 milestone_title: ...
 epic:
   title: ...
-  body: ...
+  body: |
+    ...
 tasks:
   - key: T1              # stable key inside the plan; issue number assigned at materialization
     title: ...
