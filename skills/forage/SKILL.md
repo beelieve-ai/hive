@@ -141,8 +141,11 @@ Implicit questions scouts flagged outside their cluster:
 
 Sync local main first per the `gh-conventions` skill
 (`git switch main && git pull --ff-only origin main` before any commit on
-main — after any prior squash-merge, local main is stale). Then commit
-the new/updated research docs and the PRD (Conventional Commits), e.g.:
+main — after any prior squash-merge, local main is stale). For every RES
+doc that reached `status: answered` this run, append a `res-answered`
+entry (subject: the RES id) to the PRD's audit log per the colony
+`Audit log` section. Then commit the new/updated research docs, the PRD,
+and the audit log together (Conventional Commits), e.g.:
 
 ```
 docs(research): add RES-004, RES-005 for PRD-003

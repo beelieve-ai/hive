@@ -25,7 +25,8 @@ prefix is the packaging namespace, not part of the name.
 
 - **Documents in `docs/` are the source of truth for intent**:
   `docs/prd/` (PRD-NNN), `docs/research/` (RES-NNN), `docs/adr/` (ADR-NNNN,
-  MADR 4.0), `docs/plans/` (PLAN-NNN plan.yaml audit trail).
+  MADR 4.0), `docs/plans/` (PLAN-NNN plan.yaml). `docs/audit/` holds the
+  per-PRD audit log — provenance, not intent (see Audit log below).
 - **ADRs have a scope**: `scope: prd` (default) derives from one PRD;
   `scope: repo` is a standalone cross-cutting platform decision (CI/CD,
   build system, toolchain) with no parent PRD (`derived-from: null`),
@@ -110,6 +111,36 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
   and take max + 1.
 - IDs are append-only and never reused — even for deleted or abandoned docs.
 
+## Audit log (per-PRD provenance)
+
+Every PRD gets one **audit log**: an append-only file at
+`docs/audit/PRD-NNN-audit.md` recording who decided what, when, across that
+PRD's lifecycle. It is **provenance — neither intent nor execution state**:
+the docs-are-intent / issues-are-execution split does not apply to it, and
+it is **never read for routing or resume** — the artifacts remain the state.
+
+- **One markdown line per event, fixed schema**:
+  `- <UTC timestamp> · <event> · <subject> · <detail> · by: human|yolo`
+  e.g. `- 2026-07-04T14:32Z · adr-accepted · ADR-0007 · option: embedded queue · by: human`.
+  Timestamp via `date -u +%Y-%m-%dT%H:%MZ`.
+- **Events recorded**: every human gate verdict (`prd-approved`,
+  `adr-accepted`, `adr-rejected`, `plan-approved`, `plan-declined`,
+  `pause-resolved`), every `--yolo` auto-accept (same event names,
+  `by: yolo`), and every doc status flip (`res-answered`, `plan-reviewed`,
+  `plan-materialized`, `prd-planned`, `prd-implemented`, `adr-superseded`).
+  Halts, errors, and retries are **not** logged.
+- **Writer**: the phase that owns a status write appends the entry at the
+  same moment and commits it **in the same commit** as the artifact it
+  records — standalone runs and `/hive:bumble` runs behave identically;
+  bumble itself never writes audit entries. `by: yolo` marks exactly the
+  verdicts auto-accepted under the `--yolo` carve-out.
+- **Lazily created, forward-only**: the file is created at the PRD's first
+  recorded event (header line `# Audit log — PRD-NNN`, then entries);
+  pre-existing PRDs are never backfilled. Entries are append-only — never
+  edited, reordered, or deleted.
+- **Repo-scoped ADRs have no audit log** — no parent PRD; their trail stays
+  in `docs/adr/DECISIONS.md` and the ADR files themselves.
+
 ## Ground rules
 
 - **Human gates are mandatory**: PRD approval, ADR acceptance, plan approval
@@ -146,7 +177,8 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
   orchestrator.
 - **Docs = intent, issues = execution state.** Never duplicate execution
   status back into docs except at the defined sync points: `/hive:comb`
-  materialization and `/hive:swarm` completion.
+  materialization and `/hive:swarm` completion. The per-PRD audit log is
+  provenance and exempt from this split (see Audit log above).
 - **All `gh` automation uses `--json` output**, never parses human-readable
   output — with **one sanctioned exception**: `gh issue create` and
   `gh pr create` have no `--json` flag. New numbers are captured from their

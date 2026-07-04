@@ -127,7 +127,9 @@ Then push (`git push origin main`).
    the revision, and present again. While `status: draft`, the document is
    freely editable.
 4. When the user declares approval in conversation, set `status: approved` in
-   the frontmatter and commit + push:
+   the frontmatter, append a `prd-approved` entry to the PRD's audit log
+   (`docs/audit/PRD-NNN-audit.md`, created now if absent — schema and rules
+   in the colony `Audit log` section), and commit + push both files together:
 
 ```
 docs(prd): approve PRD-NNN

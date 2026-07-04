@@ -225,6 +225,14 @@ considered alternative ("Accept <other option> instead"), then
   pending`) — in the PRD's Open Questions, or in `docs/adr/DECISIONS.md`
   for a standalone run.
 
+**Whatever the verdict, append it to the PRD's audit log**
+(`docs/audit/<PRD-id>-audit.md`, per the colony `Audit log` section):
+`adr-accepted` (detail: the chosen option) or `adr-rejected` (detail:
+proposed, pending), `by: human` — or `by: yolo` when the verdict was
+auto-accepted under the bumble carve-out. A supersede additionally gets an
+`adr-superseded` entry for the old id. Standalone runs (`scope: repo`, no
+parent PRD) have no audit log — skip this.
+
 An accepted ADR is final. If the user later changes their mind, the answer
 is a **new** `/hive:waggle` run that supersedes it — never an edit.
 
@@ -234,8 +242,8 @@ Sync main first per the `gh-conventions` skill (`git switch main && git pull
 --ff-only origin main`) — never commit on a stale main. Then commit all of
 this run's doc changes together: new ADR files, the PRD frontmatter/Open
 Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), any
-`superseded` flips, plus the `ARCHITECTURE.md` and `CLAUDE.md` bedrock
-updates from step 7. Conventional commit, e.g.:
+`superseded` flips, the PRD's audit log entries from step 7, plus the
+`ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from step 7. Conventional commit, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003

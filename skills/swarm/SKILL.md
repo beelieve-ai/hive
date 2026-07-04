@@ -35,7 +35,11 @@ Ground rules that bind every step:
   "Other" catch what you didn't foresee. Never mark progress manually, never
   close issues to force the loop forward (the sole exception is the two
   sanctioned `gh issue close` cases in Steps 3.3 and 3.8, which reconcile
-  GitHub with an already-merged state).
+  GitHub with an already-merged state). Every resolved PAUSE gets a
+  `pause-resolved` entry (subject: the issue number, detail: the decision,
+  `by: human`) appended to the PRD's audit log per the colony `Audit log`
+  section — committed with the next doc commit (Step 5), or on its own
+  before stopping when the resolution ends the run.
 
 ## Step 0 — Resolve the milestone and check the gate
 
@@ -247,9 +251,11 @@ Execute in exactly this order:
 1. **Sync main**: `git switch main && git pull --ff-only origin main`.
 2. Edit the PRD (path from Step 0.3): set frontmatter
    `status: implemented`. This is one of the two sanctioned doc↔issue sync
-   points (the other is /hive:comb materialization).
+   points (the other is /hive:comb materialization). Append a
+   `prd-implemented` entry to the PRD's audit log (colony `Audit log`
+   section), along with any uncommitted `pause-resolved` entries.
 3. Commit and push:
-   `git add <prd-path> && git commit -m "docs(prd): mark <PRD-id> implemented" && git push origin main`.
+   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> implemented" && git push origin main`.
 4. **Close the epic explicitly**: `gh issue close <epic#>`. This is
    load-bearing — the epic shares the milestone with the tasks and nothing
    auto-closes it, so without this step the milestone could never be
