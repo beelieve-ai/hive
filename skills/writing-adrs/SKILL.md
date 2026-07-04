@@ -104,6 +104,47 @@ repo-relative link.
    forward link to the successor are the only permitted edits to an
    accepted ADR.
 
+## The bedrock digest — root ARCHITECTURE.md
+
+Root `ARCHITECTURE.md` is a **derived digest**: one condensed bedrock entry
+per **accepted** ADR (both scopes), loaded into every session's context via
+an `@ARCHITECTURE.md` import in the repo's root `CLAUDE.md`. It is **never a
+source of truth** — planning always reads the full ADRs — and is written
+**only** by `/hive:waggle` at its acceptance/supersede sync points. Proposed
+ADRs, superseded ADRs, and `DECISIONS.md` entries never appear in it. It is
+regenerable from the accepted ADR set at any time.
+
+The file starts with a mandatory generated-file header comment:
+
+````markdown
+# Architecture bedrock
+
+<!-- Derived digest — do NOT hand-edit. One entry per accepted ADR,
+     maintained by /hive:waggle on acceptance/supersede. The full ADRs in
+     docs/adr/ are the source of truth; this file is regenerable from the
+     accepted ADR set at any time. -->
+````
+
+Each entry, ordered by ADR id ascending:
+
+````markdown
+## ADR-0007: Queue backend
+[ADR-0007](docs/adr/ADR-0007-queue-backend.md)
+**Decision:** Use Redis Streams as the job queue.
+**Binds:** All async work goes through Redis Streams; introducing another
+queue technology requires superseding this ADR.
+````
+
+- **Decision** — one sentence condensed from the ADR's **final accepted**
+  Decision Outcome.
+- **Binds** — the constraint phrased as an obligation on future work, not a
+  restatement of the decision.
+- Link repo-relative from root; ID + link per `hive:crosslinking`.
+- Entries are keyed by their `## ADR-NNNN:` heading. A sync **replaces** an
+  existing entry in place (idempotent) and **inserts** a new entry at its
+  **id-sorted position** — a plain append would degrade the ascending-id
+  order. Supersession **deletes** the superseded ADR's entry.
+
 ## Template
 
 Scaffold a new ADR (MADR 4.0) from this skeleton (this skill is the source of

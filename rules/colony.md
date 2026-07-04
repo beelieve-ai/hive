@@ -190,3 +190,15 @@ only** — no implementation details, no execution state. It is lazily
 created by the first grilling session that resolves a term, updated inline
 the moment a term resolves, and committed alongside the artifact whose
 grilling resolved it.
+
+## ARCHITECTURE.md governance
+
+Root `ARCHITECTURE.md` is a version-controlled **derived digest** — one
+condensed bedrock entry per **accepted** ADR (both scopes), loaded into
+every future session's context via an `@ARCHITECTURE.md` import in the repo's
+root `CLAUDE.md`. It is **never a source of truth**: the full ADRs in
+`docs/adr/` are, and planning always reads them in full. It is lazily
+created and updated **only** at the `/hive:waggle` acceptance/supersede sync
+points, is regenerable at any time from the accepted ADR set, and is never
+hand-edited. Proposed ADRs, superseded ADRs, and `DECISIONS.md` entries
+never appear in it.

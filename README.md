@@ -27,7 +27,7 @@ Idea → PRD → Research → ADR → Plan → Build → Review
 |---|---|---|---|
 | Idea → PRD | `/hive:pollinate <idea>` | `docs/prd/PRD-NNN-slug.md` via a one-question-at-a-time grilling interview | PRD approval |
 | Research | `/hive:forage <PRD-id>` | `docs/research/RES-NNN-*.md` — scout agents answer the PRD's open questions in parallel | all research docs `status: answered` |
-| ADR | `/hive:waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision | ADR acceptance |
+| ADR | `/hive:waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision + `/ARCHITECTURE.md` bedrock digest | ADR acceptance |
 | Plan | `/hive:comb <PRD-id>` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG | plan approval before materialization |
 | Build + Review | `/hive:swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged | merge failures pause with the PR URL |
 | Anytime | `/hive:sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
@@ -72,6 +72,7 @@ docs/               output tree, populated in the repo Hive runs against
   prd/ research/ adr/ plans/    PRD-NNN / RES-NNN / ADR-NNNN / PLAN-NNN
 CHANGELOG.md · LICENSE
 CONTEXT.md          canonical glossary (lazily created by grilling sessions)
+ARCHITECTURE.md     bedrock digest of accepted ADRs (lazily created by /hive:waggle, imported by root CLAUDE.md)
 ```
 
 ## Conventions
