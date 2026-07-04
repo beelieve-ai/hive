@@ -122,7 +122,10 @@ it is **never read for routing or resume** — the artifacts remain the state.
 - **One markdown line per event, fixed schema**:
   `- <UTC timestamp> · <event> · <subject> · <detail> · by: human|yolo`
   e.g. `- 2026-07-04T14:32Z · adr-accepted · ADR-0007 · option: embedded queue · by: human`.
-  Timestamp via `date -u +%Y-%m-%dT%H:%MZ`.
+  Timestamp via `date -u +%Y-%m-%dT%H:%MZ`. All five fields appear on every
+  line: `subject` is the artifact the event is about (a doc id like
+  `ADR-0007`, or an issue number); `detail` is short free text — write `—`
+  when there is nothing to add.
 - **Events recorded**: every human gate verdict (`prd-approved`,
   `adr-accepted`, `adr-rejected`, `plan-approved`, `plan-declined`,
   `pause-resolved`), every `--yolo` auto-accept (same event names,
@@ -138,8 +141,10 @@ it is **never read for routing or resume** — the artifacts remain the state.
   recorded event (header line `# Audit log — PRD-NNN`, then entries);
   pre-existing PRDs are never backfilled. Entries are append-only — never
   edited, reordered, or deleted.
-- **Repo-scoped ADRs have no audit log** — no parent PRD; their trail stays
-  in `docs/adr/DECISIONS.md` and the ADR files themselves.
+- **Repo-scoped ADRs have no audit log** — no parent PRD; their acceptance
+  trail is the ADR file itself (its `status:` flips, plus git history), and
+  worthiness-rejected or deferred standalone candidates stay in
+  `docs/adr/DECISIONS.md`.
 
 ## Ground rules
 

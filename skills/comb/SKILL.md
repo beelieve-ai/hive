@@ -175,8 +175,12 @@ the human.
 
 Record the verdict in the PRD's audit log (colony `Audit log` section):
 `plan-approved` (`by: human`, or `by: yolo` under the carve-out) or
-`plan-declined`. An approval's entry rides the Step 4.2 commit; a Decline
-commits the audit log on its own before stopping.
+`plan-declined`, subject: PLAN-NNN. On a resume that re-poses this gate,
+skip the append when the log already records that verdict. An approval's
+entry rides the Step 4.2 commit; a Decline commits the audit log
+**together with the reviewed plan.yaml** (sync main first per
+`gh-conventions`, then push) before stopping — never split the entry from
+the plan it records.
 
 ## Step 4 — Materialize (only after approval; resumable and IDEMPOTENT)
 

@@ -82,7 +82,7 @@ Also repair the Accept-path crash window: any `status: accepted` ADR with
 `derived-from:` this PRD whose id is missing from the PRD's `adrs:`
 frontmatter list means a prior run was interrupted mid-Accept — append the
 id now and re-run the remaining step-7 Accept bookkeeping (supersede flip,
-bedrock digest sync) for it; all of it is idempotent.
+bedrock digest sync, audit-log append) for it; all of it is idempotent.
 
 PRD run: from the PRD (requirements, Open Questions, body) and the accepted
 research findings, list the candidate architecture decisions — each phrased
@@ -225,13 +225,11 @@ considered alternative ("Accept <other option> instead"), then
   pending`) — in the PRD's Open Questions, or in `docs/adr/DECISIONS.md`
   for a standalone run.
 
-**Whatever the verdict, append it to the PRD's audit log**
-(`docs/audit/<PRD-id>-audit.md`, per the colony `Audit log` section):
-`adr-accepted` (detail: the chosen option) or `adr-rejected` (detail:
-proposed, pending), `by: human` — or `by: yolo` when the verdict was
-auto-accepted under the bumble carve-out. A supersede additionally gets an
-`adr-superseded` entry for the old id. Standalone runs (`scope: repo`, no
-parent PRD) have no audit log — skip this.
+**Whatever the verdict, append it to the PRD's audit log** per the colony
+`Audit log` section: `adr-accepted` (detail: the chosen option) or
+`adr-rejected` (detail: proposed, pending); a supersede additionally gets
+an `adr-superseded` entry for the old id (detail: superseded by the new
+id). Standalone runs have no parent PRD and no audit log — skip this.
 
 An accepted ADR is final. If the user later changes their mind, the answer
 is a **new** `/hive:waggle` run that supersedes it — never an edit.
