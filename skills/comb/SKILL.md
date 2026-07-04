@@ -165,6 +165,12 @@ findings (Step 2.5 flow, fresh iteration counter) and re-run all three
 reviewers before returning to this gate. If the user declines, stop — the
 plan stays `status: reviewed`.
 
+Sole exception: under a `/hive:bumble --yolo` run, approval for a plan
+drafted and reviewed within that same run was delegated at invocation per
+the colony carve-out — record it as approved without posing the question;
+a plan that already existed when the bumble run started is always posed to
+the human.
+
 ## Step 4 — Materialize (only after approval; resumable and IDEMPOTENT)
 
 A partial failure (rate limit, network, crash) must **never** duplicate

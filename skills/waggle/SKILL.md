@@ -15,7 +15,11 @@ canonical vocabulary throughout.
 Human gates are mandatory here: **never set `status: accepted` without the
 user's explicit acceptance in this conversation.** No exceptions, no
 "the recommendation is obvious", no batching acceptances the user did not
-individually give.
+individually give — with one delegated exception: under a
+`/hive:bumble --yolo` run, the acceptance verdict for ADRs drafted in that
+run was delegated at invocation per the colony carve-out — the recommended
+option is recorded as accepted without posing the question; pre-existing
+proposed ADRs still gate normally.
 
 ## 1. Resolve $ARGUMENTS
 
@@ -65,12 +69,28 @@ draft anyway"**. Continue only on an explicit Proceed selection.
 
 ## 3. Identify candidate decisions
 
+**PRD run — resume check before mining.** Before mining new candidates,
+glob `docs/adr/ADR-*.md` for docs with `status: proposed` and
+`derived-from:` equal to this PRD. For any such draft that does **not**
+carry a settlement note in the PRD's Open Questions (an `ADR-NNNN
+proposed, pending` line), the prior run was interrupted between persisting
+the draft and gating it: resume that ADR's step-7 acceptance gate first,
+before any new drafting — never allocate a fresh id for a decision an
+existing proposed draft already covers.
+
 PRD run: from the PRD (requirements, Open Questions, body) and the accepted
 research findings, list the candidate architecture decisions — each phrased
 as a neutral question ("How do we persist X?", "Which protocol between A
 and B?"). If a topic was given, keep only candidates matching it, but
 **mention** any obviously ADR-worthy candidates outside the topic so the
 user knows they exist for a later run.
+
+Candidates already **settled** are skipped — never re-derived, re-tested,
+or re-drafted. Settled means: covered by an existing **accepted** ADR;
+carrying an `ADR-NNNN proposed, pending` note (an explicit human
+Reject/defer verdict already given — never re-ask it); or carrying a
+worthiness-rejection rationale line in the PRD. This keeps re-runs
+idempotent: no duplicate ADR ids, no duplicate rationale lines.
 
 Standalone run: the candidates are the decision(s) the topic names, phrased
 the same way — this mode drafts what the user asked for; it does not mine a
@@ -166,7 +186,10 @@ considered alternative ("Accept <other option> instead"), then
   3. If it supersedes an older ADR: flip the old ADR's `status:` to
      `superseded` and add a forward link to the successor — per
      `writing-adrs`, these are the **only** edits ever permitted on an
-     accepted ADR.
+     accepted ADR. For a PRD run, also replace the superseded id with the
+     successor's id in the PRD's `adrs:` frontmatter list if the old id is
+     present — a stale superseded id left in `adrs:` makes the next
+     `/hive:comb` abort.
   4. **Sync the bedrock digest** per `writing-adrs`: condense this ADR's
      **final accepted** Decision Outcome — as it stands after any revision,
      never the architect's draft recommendation — into a bedrock entry in

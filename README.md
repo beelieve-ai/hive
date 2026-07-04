@@ -2,7 +2,7 @@
 
 An AI-driven development lifecycle (AI-DLC) for [beelieve-ai](https://github.com/beelieve-ai), built on Claude Code skills, agents, and hooks and packaged as an installable plugin.
 
-**Documents in `docs/` are the source of truth for intent. GitHub Issues are the execution layer.** Every stage transition that matters passes through a human approval gate — nothing is auto-accepted.
+**Documents in `docs/` are the source of truth for intent. GitHub Issues are the execution layer.** Every stage transition that matters passes through a human approval gate — nothing is auto-accepted (single exception: `/hive:bumble --yolo` delegates the ADR-acceptance and plan-approval verdicts for artifacts created during that run).
 
 ## Install
 
@@ -13,7 +13,7 @@ Hive ships as a Claude Code plugin. Add the marketplace and install it:
 /plugin install hive@beelieve-ai
 ```
 
-Commands are then available namespaced under `hive:` — `/hive:pollinate`, `/hive:forage`, `/hive:waggle`, `/hive:comb`, `/hive:swarm`, `/hive:sting` — and work in **any** repo: doc links and issue bodies are built from the current repo's `gh` remote, and the conventions in `rules/colony.md` are injected at session start. Update later with `/plugin update` (a new version arrives only when `plugin.json`'s `version` is bumped).
+Commands are then available namespaced under `hive:` — `/hive:pollinate`, `/hive:forage`, `/hive:waggle`, `/hive:comb`, `/hive:swarm`, `/hive:bumble`, `/hive:sting` — and work in **any** repo: doc links and issue bodies are built from the current repo's `gh` remote, and the conventions in `rules/colony.md` are injected at session start. Update later with `/plugin update` (a new version arrives only when `plugin.json`'s `version` is bumped).
 
 **Local development** (working on Hive itself): load the plugin straight from a checkout with `claude --plugin-dir .`, or add the local path as a marketplace (`/plugin marketplace add /path/to/hive`).
 
@@ -30,6 +30,7 @@ Idea → PRD → Research → ADR → Plan → Build → Review
 | ADR | `/hive:waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision + root `ARCHITECTURE.md` bedrock digest | ADR acceptance |
 | Plan | `/hive:comb <PRD-id>` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG | plan approval before materialization |
 | Build + Review | `/hive:swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged | merge failures pause with the PR URL |
+| Autopilot | `/hive:bumble <PRD-id> [--yolo]` | Cascades Research → ADR → Plan → Build for one approved PRD, deriving the current phase from the artifacts; resumable by re-running | all phase gates inline; `--yolo` delegates the two approval gate types for artifacts created in the run |
 | Anytime | `/hive:sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
 
 A typical end-to-end run:
@@ -40,11 +41,16 @@ A typical end-to-end run:
 /hive:waggle PRD-001                                   # decide architecture → accept ADRs
 /hive:comb PRD-001                                     # plan → review → approve → issues created
 /hive:swarm 1                                          # build the milestone to completion
+
+# or, after approving the PRD, autopilot the rest:
+/hive:bumble PRD-001
 ```
 
 ## How execution works
 
 `/hive:comb` turns an approved plan into one **milestone per goal**, with an **Epic issue** and **Task sub-issues** wired together by native GitHub issue dependencies (`blocked by` / `blocking`) — no GitHub Projects. `/hive:swarm` then walks the DAG: for each ready task, a **worker** agent branches from fresh main, implements, and pushes; a read-only **guard** agent reviews the branch against the issue's acceptance criteria and any referenced ADRs; the PR is squash-merged, auto-closing the issue. Issues carry the `hive:managed` label plus a cosmetic `phase:build` / `phase:review` flip.
+
+**Autopilot.** `/hive:bumble <PRD-id>` reads the lifecycle state straight from the docs and the milestone marker, then runs Research → ADR → Plan → Build in order — each phase no-ops when it has nothing to do. It pauses at every human gate inline and, on any failure, halts with a resume instruction. There is no state file: re-running `/hive:bumble` simply resumes from the artifacts on disk. Add `--yolo` to delegate the two approval gate types (ADR acceptance and plan approval) for artifacts created during that run.
 
 ## Agents
 

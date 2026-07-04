@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.2.0] — 2026-07-04
+
+### Added
+- `/hive:bumble <PRD-id> [--yolo]` — an autopilot command that cascades
+  Research → ADR → Plan → Build for one approved PRD. It derives the current
+  phase from the artifacts on disk (no state file), pauses at every human gate
+  inline, and — with `--yolo` — delegates the two **approval** gate types (ADR
+  acceptance and plan approval) for artifacts created during that run.
+
+### Changed
+- The colony ground rules gain the narrow `--yolo` delegation carve-out: the
+  two approval gates may be auto-decided, but only for artifacts created within
+  the current `/hive:bumble --yolo` run.
+- The SessionStart hook now injects the resolved plugin root (a `Hive plugin
+  root:` line) alongside the conventions.
+- `/hive:waggle` is now idempotent across re-runs: it resumes orphaned
+  `status: proposed` drafts and skips candidates already settled (covered by
+  an accepted ADR, an explicit defer, or a recorded worthiness rationale).
+
+### Fixed
+- `/hive:waggle` supersede now replaces the superseded id in the PRD's `adrs:`
+  list — the stale id previously left behind made the next `/hive:comb` abort.
+- `/hive:forage` (research-method) no longer treats `/hive:waggle`'s settlement
+  notes in a PRD's Open Questions as researchable questions.
+
 ## [0.1.1] — 2026-07-04
 
 ### Fixed

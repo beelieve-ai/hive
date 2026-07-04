@@ -9,7 +9,7 @@ Installed as a plugin, every Hive command, skill, and agent is namespaced
 under `hive:`:
 
 - **Commands**: `/hive:pollinate`, `/hive:forage`, `/hive:waggle`,
-  `/hive:comb`, `/hive:swarm`, `/hive:sting`.
+  `/hive:comb`, `/hive:swarm`, `/hive:sting`, `/hive:bumble`.
 - **Agents** (spawn by this exact `subagent_type`): `hive:scout`,
   `hive:worker`, `hive:guard`, `hive:architect`, `hive:planner`,
   `hive:plan-reviewer-context` / `-dag` / `-sizing`. A **bare** agent name
@@ -36,6 +36,10 @@ prefix is the packaging namespace, not part of the name.
   native **sub-issues** for the Epic → Task hierarchy, native **issue
   dependencies** (`blocked by` / `blocking`) for the task DAG.
   No GitHub Projects — keep it simple.
+- **`/hive:bumble <PRD-id> [--yolo]` autopilots the lifecycle for one
+  approved PRD** — it derives the current phase from the artifacts and
+  cascades Research → ADR → Plan → Build to completion, pausing inline at
+  every human gate.
 
 ## Naming map
 
@@ -51,6 +55,7 @@ old command, agent, or label names anywhere else.
 | `/comb` | `/plan` | command |
 | `/swarm` | `/goal` | command |
 | `/sting` | — (new) | command |
+| `/bumble` | — (new) | command |
 | `scout` | `researcher` | agent |
 | `worker` | `implementer` | agent |
 | `guard` | `code-reviewer` | agent |
@@ -108,7 +113,18 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
 ## Ground rules
 
 - **Human gates are mandatory**: PRD approval, ADR acceptance, plan approval
-  before materialization. Never skip, never auto-accept.
+  before materialization. Never skip, never auto-accept. **Single, narrow
+  carve-out — `/hive:bumble --yolo`**: passing `--yolo` on a `/hive:bumble`
+  invocation IS the human's explicit gate declaration, delegated in advance
+  for that run only, covering exactly two gate types — per-ADR acceptance
+  (the architect's recommended option) and plan approval before
+  materialization — and only for artifacts created during that run. At those
+  gates no question is posed — the answer was given at invocation — and every
+  auto-accepted verdict is listed in the run report. `--yolo` never extends
+  to PRD approval, to pre-existing proposed ADRs or plans, to any PAUSE,
+  error, or ambiguity resolution, or to missing-argument prompts: those
+  always go to the human, flag or no flag. Headless runs without `--yolo`
+  still never auto-approve.
 - **All user interaction goes through the `AskUserQuestion` tool — no
   exceptions.** Every question, gate verdict, PAUSE resolution, and
   missing-argument prompt: one decision per call, the recommended answer as
@@ -120,9 +136,12 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
   work), and let "Other" carry the free-form answer. Never ask in plain
   prose. Selecting an explicit Approve/Accept option **is** the explicit
   human declaration the gates require — silence or enthusiasm still is not.
-  Sole exception: in a headless/non-interactive run the tool genuinely does
-  not exist — state that limitation once, then fall back to prose; **gates
-  still never auto-approve there**.
+  One delegation exception: the two gate types `/hive:bumble --yolo` covers
+  are answered by the flag itself, per the human-gates carve-out above — no
+  question is posed there. One environment exception: in a
+  headless/non-interactive run the tool genuinely does not exist — state that
+  limitation once, then fall back to prose; **gates still never auto-approve
+  there**.
 - **Reviewers are read-only** (no Write/Edit). Verdict loops belong to the
   orchestrator.
 - **Docs = intent, issues = execution state.** Never duplicate execution

@@ -17,6 +17,9 @@ vocabulary when phrasing questions and findings.
 Two sources, both mandatory:
 
 - The PRD's **Open Questions** section — take every entry verbatim.
+  Settlement records are the exception: worthiness-rejection rationales
+  ("…: not ADR-worthy (…)") and "ADR-NNNN proposed, pending" notes are
+  records of decisions, not questions — exclude them.
 - **Gaps found while reading the requirements** — read each `### R<n>`
   requirement and its acceptance criteria; anything that cannot be
   implemented or verified without information nobody has written down is an
