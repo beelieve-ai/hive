@@ -167,6 +167,24 @@ considered alternative ("Accept <other option> instead"), then
      `superseded` and add a forward link to the successor — per
      `writing-adrs`, these are the **only** edits ever permitted on an
      accepted ADR.
+  4. **Sync the bedrock digest** per `writing-adrs`: condense this ADR's
+     **final accepted** Decision Outcome — as it stands after any revision,
+     never the architect's draft recommendation — into a bedrock entry in
+     root `ARCHITECTURE.md` (replace an existing entry in place; insert a new
+     one at its id-sorted position); if it superseded an older ADR, delete
+     that ADR's entry. If `ARCHITECTURE.md` does not exist yet, create it
+     from the `writing-adrs` skeleton and **backfill**: glob
+     `docs/adr/ADR-*.md`, check each file's frontmatter, and read **in full**
+     every `status: accepted` ADR (both scopes) not already read this run,
+     condensing one entry each — the step-2 glob alone is only a file
+     listing, and accepted `scope: prd` ADRs of other PRDs are otherwise
+     never in context. Then — on **every** digest sync, not only first
+     creation — ensure the repo's root `CLAUDE.md` contains an active import
+     line for the digest (`@ARCHITECTURE.md` or `@./ARCHITECTURE.md`; a
+     mention inside a code span/fence doesn't count — import parsing skips
+     those). Append `@ARCHITECTURE.md` on its own line if absent (mind a
+     missing trailing newline); create a minimal `CLAUDE.md` containing just
+     that import if none exists.
 - **Accept a different option** — while `status: proposed` the doc is
   editable: update the Decision Outcome (and consequences) to the user's
   chosen option, show the revised text, then confirm via **AskUserQuestion**
@@ -186,8 +204,9 @@ is a **new** `/hive:waggle` run that supersedes it — never an edit.
 Sync main first per the `gh-conventions` skill (`git switch main && git pull
 --ff-only origin main`) — never commit on a stale main. Then commit all of
 this run's doc changes together: new ADR files, the PRD frontmatter/Open
-Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), and any
-`superseded` flips. Conventional commit, e.g.:
+Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), any
+`superseded` flips, plus the `ARCHITECTURE.md` and `CLAUDE.md` bedrock
+updates from step 7. Conventional commit, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003
@@ -201,7 +220,9 @@ command produces documents only. (`/hive:comb` pushes docs before materializing.
 
 End with a short summary: accepted ADRs (id + chosen option), proposed-but-
 undecided ADRs, worthiness-rejected candidates with where their rationale
-was recorded, and any superseded ADRs. For a PRD run, suggest
+was recorded, and any superseded ADRs. Note when the run created or updated
+`ARCHITECTURE.md`, and — especially — when it touched the user's `CLAUDE.md`
+(the only write outside `docs/`): surface that edit explicitly. For a PRD run, suggest
 `/hive:comb <PRD-id>` as the next step when the PRD's decision surface is
 covered. For a standalone run, note that the accepted repo-scoped ADR now
 binds every future plan automatically.
