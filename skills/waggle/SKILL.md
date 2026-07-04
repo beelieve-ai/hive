@@ -222,7 +222,7 @@ End with a short summary: accepted ADRs (id + chosen option), proposed-but-
 undecided ADRs, worthiness-rejected candidates with where their rationale
 was recorded, and any superseded ADRs. Note when the run created or updated
 `ARCHITECTURE.md`, and — especially — when it touched the user's `CLAUDE.md`
-(the one write outside `docs/`): surface that edit explicitly. For a PRD run, suggest
+(the only write outside `docs/`): surface that edit explicitly. For a PRD run, suggest
 `/hive:comb <PRD-id>` as the next step when the PRD's decision surface is
 covered. For a standalone run, note that the accepted repo-scoped ADR now
 binds every future plan automatically.
