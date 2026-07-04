@@ -38,10 +38,18 @@ Ground rules that bind every step:
    Continue to item 3 and run its `status: materialized` completion
    verification; only report "already materialized" and stop after **both**
    of its checks (marker present, write-backs pushed) confirm completion.
-2. Collect ADR paths: for each id in the PRD's `adrs:` frontmatter list,
-   glob `docs/adr/<id>-*.md` and confirm the doc's `status: accepted`.
-   Pass **only accepted ADRs** to the planner. An empty list is valid —
-   the whole flow works with zero ADRs (`adrs: []`).
+2. Collect ADR paths from two sources:
+   - for each id in the PRD's `adrs:` frontmatter list, glob
+     `docs/adr/<id>-*.md` and confirm the doc's `status: accepted`;
+   - glob `docs/adr/ADR-*.md` and add every ADR whose frontmatter says
+     `scope: repo` **and** `status: accepted` — repo-scoped platform
+     decisions bind every plan without appearing on any PRD's `adrs:`
+     list.
+
+   Pass **only accepted ADRs** to the planner, as planner input in Step
+   1.2 — never edit a returned plan's `adrs:` yourself (that list is
+   planner output, vetted by the reviewers). An empty combined list is
+   valid — the whole flow works with zero ADRs (`adrs: []`).
 3. Resume check: grep `docs/plans/PLAN-*.yaml` for `prd: $ARGUMENTS`.
    - No match → fresh run, continue with Step 1.
    - Match with `status: draft` → resume at Step 2 (review loop).

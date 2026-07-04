@@ -61,8 +61,11 @@ block, before any other content:
 - **PRD:** the governing PRD, linked with the full URL.
 - **Implements:** the requirement ID(s) this issue implements (`PRD-NNN-R1`;
   comma-separate multiple). For the epic, list the PRD ID itself.
-- **ADR:** the ADR ID(s) constraining this work. Omit the `· **ADR:** ...`
-  segment only when the plan genuinely has no ADRs (`adrs: []`).
+- **ADR:** the ADR ID(s) constraining this work — the task's `adr_refs:`.
+  Omit the `· **ADR:** ...` segment when that task's `adr_refs:` is empty
+  (per-task, matching colony.md — not per-plan: a plan may carry
+  repo-scoped ADRs that constrain only some of its tasks). For the epic,
+  list the plan's `adrs:` (omit when `[]`).
 
 ## Doc → Issue (sync points)
 

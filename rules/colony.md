@@ -26,6 +26,12 @@ prefix is the packaging namespace, not part of the name.
 - **Documents in `docs/` are the source of truth for intent**:
   `docs/prd/` (PRD-NNN), `docs/research/` (RES-NNN), `docs/adr/` (ADR-NNNN,
   MADR 4.0), `docs/plans/` (PLAN-NNN plan.yaml audit trail).
+- **ADRs have a scope**: `scope: prd` (default) derives from one PRD;
+  `scope: repo` is a standalone cross-cutting platform decision (CI/CD,
+  build system, toolchain) with no parent PRD (`derived-from: null`),
+  authored via `/hive:waggle --standalone <topic>`. Accepted repo-scoped
+  ADRs bind **every** plan — `/hive:comb` passes them to the planner
+  alongside the PRD's own ADRs.
 - **GitHub Issues are the execution layer**: one **milestone per goal**,
   native **sub-issues** for the Epic → Task hierarchy, native **issue
   dependencies** (`blocked by` / `blocking`) for the task DAG.
@@ -170,6 +176,12 @@ execution.
   a satisfied dependency.
 - **CONTENT-only plan-review reruns don't re-check previously passing
   reviewers** — only failed reviewers rerun on content-level corrections.
+- **Per-task ADR citation has no hard forcing function** — `adr_refs: []`
+  is valid whenever no plan ADR constrains that task, so a planner that
+  fails to cite a relevant repo-scoped ADR drops the constraint silently
+  (workers only see their own task's ADRs). Mitigated by the planner's
+  read-and-cite instruction and the context reviewer's relevance check;
+  accepted as planner/reviewer diligence.
 
 ## CONTEXT.md governance
 

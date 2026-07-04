@@ -45,7 +45,9 @@ The plan **passes** only if every task satisfies all of the following:
 4. **`adr_refs` resolve** — every entry in a task's `adr_refs:` list must
    point to an ADR document that actually exists under `docs/adr/`
    (verify with Glob, e.g. `docs/adr/ADR-NNNN-*.md`). An empty list is
-   acceptable only when the plan has no ADRs (`adrs: []`).
+   acceptable when no ADR in the plan's `adrs:` constrains that task —
+   but if a plan ADR's decision plainly bears on a task's files or
+   approach and the task does not cite it, flag that as a finding.
 
 Any violation on any task is a finding; one or more findings means
 `"verdict":"fail"`.

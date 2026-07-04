@@ -9,6 +9,16 @@ ADRs record architecture decisions in `docs/adr/ADR-NNNN-slug.md`, MADR 4.0
 format, per the **Template** at the end of this skill. They are written by the
 architect agent during `/hive:waggle` and accepted only by the human.
 
+ADRs come in two scopes, declared in frontmatter:
+
+- **`scope: prd`** (the default) — derived from a specific PRD's decision
+  surface; `derived-from:` names that PRD.
+- **`scope: repo`** — a standalone cross-cutting platform decision (CI/CD
+  provider, build system, toolchain policy) with no parent PRD;
+  `derived-from: null`. Authored via `/hive:waggle --standalone`. Accepted
+  repo-scoped ADRs bind **every** plan: `/hive:comb` passes them to the
+  planner alongside the PRD's own ADRs.
+
 ## The ADR-worthiness test — apply BEFORE writing
 
 Every candidate decision must pass **all three** legs before an ADR is
@@ -26,11 +36,15 @@ If **any leg fails, no ADR is written.** The rejected candidate must not
 vanish silently: record a one-line rationale in the PRD — in its Open
 Questions section or body — e.g. "Retry library choice: not ADR-worthy
 (trivially reversible); picked tenacity, note in PRD body." This keeps the
-decision discoverable without ADR ceremony.
+decision discoverable without ADR ceremony. In a standalone
+(`--standalone`) run there is no PRD: append the rationale line to
+`docs/adr/DECISIONS.md` instead (create the file on first use — an
+append-only log of worthiness-rejected and deferred standalone candidates).
 
 ## MADR 4.0 structure
 
-Frontmatter per the template: `id`, `status`, `derived-from` (the PRD),
+Frontmatter per the template: `id`, `status`, `scope` (`prd` | `repo`),
+`derived-from` (the PRD for `scope: prd`; `null` for `scope: repo`),
 `informed-by` (RES ids), `supersedes`, `date`. Body sections, in order:
 
 1. **Context and Problem Statement** — the forces at play and the question
@@ -47,7 +61,8 @@ Frontmatter per the template: `id`, `status`, `derived-from` (the PRD),
 6. **Pros and Cons of the Options** — one subsection per option.
 
 Use canonical glossary terms from root `CONTEXT.md` when it exists.
-Reference the PRD and any research docs by ID **and** repo-relative link.
+Reference the PRD (when one exists) and any research docs by ID **and**
+repo-relative link.
 
 ## Option-comparison quality bar
 
@@ -69,8 +84,10 @@ Reference the PRD and any research docs by ID **and** repo-relative link.
 - **proposed** — set by the architect at draft time. Freely editable while
   the options are presented and discussed.
 - **accepted** — set **only by the human** during `/hive:waggle`; never
-  auto-accept. On acceptance the ADR id is appended to the PRD's `adrs:`
-  frontmatter.
+  auto-accept. On acceptance a `scope: prd` ADR's id is appended to the
+  PRD's `adrs:` frontmatter; a `scope: repo` ADR needs no back-link —
+  `/hive:comb` discovers it by globbing `docs/adr/` for accepted
+  repo-scoped ADRs.
 - **superseded** — an accepted ADR's decision is **never edited**. If the
   decision changes, supersede it (below). Fixing a typo in prose is fine;
   changing what was decided, the options, or the reasoning is not.
@@ -96,7 +113,8 @@ truth — no external template file is required):
 ---
 id: ADR-NNNN
 status: proposed | accepted | superseded
-derived-from: PRD-NNN
+scope: prd            # prd (default) | repo — repo = standalone cross-cutting platform decision
+derived-from: PRD-NNN # the parent PRD; null when scope: repo
 informed-by: [RES-NNN]
 supersedes: null      # ADR-NNNN id this record supersedes, if any
 date: YYYY-MM-DD

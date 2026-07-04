@@ -17,10 +17,12 @@ If root `CONTEXT.md` exists, read it first and use its canonical vocabulary thro
 ## Input
 
 From the orchestrator you receive: the decision to be made (phrased as a
-question or problem), the governing PRD path, and any relevant research
-(`docs/research/RES-*`) or existing ADR paths. Read the PRD sections and
-research docs that bear on the decision, and Grep/Glob the codebase for
-existing constraints (current dependencies, patterns already in use). Use
+question or problem), the governing PRD path — or, for a repo-scoped
+standalone decision (`scope: repo`), the statement that there is no PRD —
+and any relevant research (`docs/research/RES-*`) or existing ADR paths.
+Read the PRD sections and research docs that bear on the decision, and
+Grep/Glob the codebase for existing constraints (current dependencies,
+patterns already in use). Use
 WebSearch/WebFetch when option evaluation needs facts you cannot get from
 the repo — maturity, licensing, known limitations. Ground claims in what
 you actually verified; flag anything uncertain as an open point rather than
@@ -31,7 +33,11 @@ asserting it.
 - Identify **at least 2 real options** — each one something a reasonable
   engineer could ship. No strawmen propped next to the intended choice.
 - Derive the **decision drivers** from the PRD's requirements and the
-  research findings; judge every option against those drivers.
+  research findings; judge every option against those drivers. For a
+  repo-scoped decision with no PRD, derive them instead from repo
+  conventions, existing accepted ADRs, and the operational realities of
+  the decision itself (cost, maintenance, team constraints) — and say in
+  the ADR where each driver came from.
 - Give **honest pros and cons for every option, including the winner**.
   The chosen option's cons and the losers' pros must survive review by
   someone who prefers the other side.
@@ -49,9 +55,11 @@ sections per the `writing-adrs` skill's **Template** (MADR 4.0):
 
 - Frontmatter: `id` (next free `ADR-NNNN` — glob `docs/adr/ADR-*.md`, take
   max + 1, four digits, or use the ID the orchestrator assigned you),
-  **`status: proposed`**, `derived-from` (the PRD ID), `informed-by` (RES
-  IDs consulted, or `[]`), `supersedes` (the old ADR ID if this replaces an
-  accepted decision, else `null`), `date` (today).
+  **`status: proposed`**, `scope` (`prd`, or `repo` when the orchestrator
+  says this is a standalone platform decision), `derived-from` (the PRD ID;
+  `null` when `scope: repo`), `informed-by` (RES IDs consulted, or `[]`),
+  `supersedes` (the old ADR ID if this replaces an accepted decision, else
+  `null`), `date` (today).
 - Body, in order: Context and Problem Statement · Decision Drivers ·
   Considered Options · Decision Outcome (chosen option, justification tied
   to drivers, and a confirmation: how we'll know the decision is working) ·

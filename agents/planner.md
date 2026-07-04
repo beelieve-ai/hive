@@ -55,8 +55,12 @@ dag, sizing) check exactly those rules:
   revisions.
 - **Traceability**: every task lists the requirement ids it `implements:`
   (never empty; each must exist as a `### R<n>:` anchor in the PRD) and the
-  `adr_refs:` that constrain it (`[]` only when the plan has no ADRs). Every
-  in-scope PRD requirement is covered by at least one task.
+  `adr_refs:` that constrain it (`[]` when no ADR in the plan constrains
+  that task). The plan's `adrs:` may include repo-scoped platform ADRs the
+  orchestrator gave you beyond the PRD's own list — read their decisions
+  and cite each on the tasks it genuinely constrains; a worker only sees
+  the ADRs named in its own task. Every in-scope PRD requirement is
+  covered by at least one task.
 - **Explicit `depends_on` DAG**: an edge for every real consumption
   relationship (file, function, schema, config key), no implicit ordering, no
   fake edges, cycle-free with a valid topological order.

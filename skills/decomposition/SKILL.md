@@ -84,11 +84,15 @@ constrain it:
 
 ```yaml
 implements: [PRD-NNN-R1]     # requirement anchors from the PRD, never empty
-adr_refs: [ADR-NNNN]         # ADRs whose decisions constrain this task ([] only if the plan has no ADRs)
+adr_refs: [ADR-NNNN]         # ADRs whose decisions constrain THIS task ([] when none do)
 ```
 
 - Each requirement ID must exist as a `### R<n>: ...` anchor in the referenced
   PRD; each ADR ref must be an accepted ADR listed in the plan's `adrs:`.
+- `adr_refs: []` is valid whenever no ADR in the plan's `adrs:` constrains
+  that particular task — plans carry repo-scoped platform ADRs that do not
+  bind every task. Citing them where they *do* apply is the planner's
+  judgment; a worker only ever sees the ADRs named in its own task.
 - Every PRD requirement in scope must be covered by at least one task —
   uncovered requirements mean the decomposition is incomplete.
 - The task body's header block repeats this traceability per the crosslinking
@@ -102,7 +106,7 @@ truth — no external template file is required):
 ```yaml
 plan: PLAN-NNN
 prd: PRD-NNN
-adrs: [ADR-NNNN]
+adrs: [ADR-NNNN]        # all accepted ADRs given by /hive:comb — PRD-listed and repo-scoped
 status: draft | reviewed | materialized
 review: null            # set to "passed" by /hive:comb after all three reviewers pass
 reviewed_by: []
@@ -115,7 +119,7 @@ tasks:
   - key: T1              # stable key inside the plan; issue number assigned at materialization
     title: ...
     implements: [PRD-NNN-R1]   # requirement IDs
-    adr_refs: [ADR-NNNN]
+    adr_refs: [ADR-NNNN]       # ADRs constraining this task; [] when none do
     depends_on: []       # list of task keys → becomes GH "blocked by"
     parallel_ok: true
     body: |

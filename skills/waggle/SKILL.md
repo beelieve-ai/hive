@@ -1,10 +1,10 @@
 ---
 name: waggle
-description: Drive architecture decisions for a PRD into MADR 4.0 ADRs — worthiness-test candidates, spawn one architect per passing decision, present options, and record human acceptance. Invoke as /hive:waggle <PRD-id> [topic], e.g. `/hive:waggle PRD-003` or `/hive:waggle PRD-003 queue backend` to focus on one topic.
+description: Drive architecture decisions into MADR 4.0 ADRs — worthiness-test candidates, spawn one architect per passing decision, present options, and record human acceptance. Invoke as /hive:waggle <PRD-id> [topic] for a PRD's decisions (e.g. `/hive:waggle PRD-003` or `/hive:waggle PRD-003 queue backend`), or /hive:waggle --standalone <topic> for a cross-cutting repo-scoped platform decision with no parent PRD (e.g. `/hive:waggle --standalone CI provider`).
 disable-model-invocation: true
 ---
 
-# /hive:waggle — architecture decisions for a PRD
+# /hive:waggle — architecture decisions for a PRD (or standalone)
 
 You are the orchestrator. Read the `hive:writing-adrs` and `hive:crosslinking` skills
 before doing anything else — the ADR-worthiness test, the MADR 4.0 quality
@@ -19,43 +19,63 @@ individually give.
 
 ## 1. Resolve $ARGUMENTS
 
-`$ARGUMENTS` is `<PRD-id> [topic]`:
+`$ARGUMENTS` is `<PRD-id> [topic]` or `--standalone <topic>`:
 
-- The **first whitespace-separated token** is the PRD id — accept `PRD-NNN`
-  or a bare number `NNN` (zero-pad to three digits).
+- If the **first whitespace-separated token** is `--standalone`, this is a
+  **standalone run**: a repo-scoped platform decision (`scope: repo`,
+  no parent PRD). Everything after the flag is the *topic* — required; if
+  missing, ask for it via **AskUserQuestion** (offer plausible
+  platform-decision topics from repo signals as options, "Other" for
+  free text). The flag is mandatory for PRD-less runs — a bare topic is
+  indistinguishable from a mistyped PRD id and must fail the PRD glob
+  below, never be silently reinterpreted.
+- Otherwise the first token is the PRD id — accept `PRD-NNN` or a bare
+  number `NNN` (zero-pad to three digits).
 - **Everything after it** (if anything) is a free-text *topic* that narrows
   which decisions this run considers. No topic ⇒ consider all architecture
   decisions the PRD raises.
 
-Resolve the PRD file by globbing `docs/prd/PRD-NNN-*.md`. Fail loudly on
-zero or multiple matches — never guess. If `$ARGUMENTS` is empty, ask which
-PRD to run against via **AskUserQuestion**: glob `docs/prd/PRD-*.md` and
-offer the found PRDs as options (id + title, approved ones first), "Other"
-for anything else. Stop until answered.
+For a PRD run, resolve the PRD file by globbing `docs/prd/PRD-NNN-*.md`.
+Fail loudly on zero or multiple matches — never guess. If `$ARGUMENTS` is
+empty, ask which PRD to run against via **AskUserQuestion**: glob
+`docs/prd/PRD-*.md` and offer the found PRDs as options (id + title,
+approved ones first), "Other" for anything else. Stop until answered.
 
 Read the PRD. If its `status:` is `draft`, put the decision via
 **AskUserQuestion**: warn that ADRs normally follow PRD approval, options
 **"Stop — approve the PRD first (Recommended)"** and **"Proceed on the
 draft anyway"**. Continue only on an explicit Proceed selection.
 
+(Standalone runs skip all PRD resolution — there is no PRD.)
+
 ## 2. Gather inputs
 
-- From the PRD frontmatter `research:` list, resolve each RES id to its file
-  under `docs/research/RES-NNN-*.md` and read the ones whose `status:` is
-  `answered` (warn about, but do not read conclusions from, unanswered ones).
-- From the PRD frontmatter `adrs:` list, read any existing ADRs — they are
-  prior decisions; a new run may **supersede** them but never re-open them
-  by editing.
-- Glob `docs/adr/ADR-*.md` once now to know the existing ADR set.
+- PRD run only: from the PRD frontmatter `research:` list, resolve each RES
+  id to its file under `docs/research/RES-NNN-*.md` and read the ones whose
+  `status:` is `answered` (warn about, but do not read conclusions from,
+  unanswered ones).
+- PRD run only: from the PRD frontmatter `adrs:` list, read any existing
+  ADRs — they are prior decisions; a new run may **supersede** them but
+  never re-open them by editing.
+- **Every run**: glob `docs/adr/ADR-*.md` once now to know the existing ADR
+  set, and read **in full** every ADR whose frontmatter says
+  `scope: repo` and `status: accepted` — repo-scoped decisions are not on
+  any PRD's `adrs:` list, and supersede detection only works against
+  decisions actually read.
 
 ## 3. Identify candidate decisions
 
-From the PRD (requirements, Open Questions, body) and the accepted research
-findings, list the candidate architecture decisions — each phrased as a
-neutral question ("How do we persist X?", "Which protocol between A and B?").
-If a topic was given, keep only candidates matching it, but **mention** any
-obviously ADR-worthy candidates outside the topic so the user knows they
-exist for a later run.
+PRD run: from the PRD (requirements, Open Questions, body) and the accepted
+research findings, list the candidate architecture decisions — each phrased
+as a neutral question ("How do we persist X?", "Which protocol between A
+and B?"). If a topic was given, keep only candidates matching it, but
+**mention** any obviously ADR-worthy candidates outside the topic so the
+user knows they exist for a later run.
+
+Standalone run: the candidates are the decision(s) the topic names, phrased
+the same way — this mode drafts what the user asked for; it does not mine a
+document for adjacent candidates (there is none to mine). If the topic
+plainly bundles several separable decisions, list them individually.
 
 If a candidate would change what an existing **accepted** ADR decided, it is
 a **supersede candidate**: it still goes through the full flow below, and you
@@ -71,11 +91,14 @@ Failed candidates never vanish silently: for each one, append a one-line
 rationale to the PRD — into its **Open Questions** section (or body where it
 fits better), e.g. "Retry library choice: not ADR-worthy (trivially
 reversible); picked tenacity." Edit the PRD file now; this edit is part of
-this run's commit.
+this run's commit. In a standalone run there is no PRD: append the
+rationale line to `docs/adr/DECISIONS.md` instead (create it on first use —
+an append-only log of worthiness-rejected and deferred standalone
+candidates).
 
 If **no** candidate passes, report that (with the recorded rationales),
-commit the PRD edit per step 8, and stop — a run that writes zero ADRs is a
-valid outcome.
+commit the PRD or `DECISIONS.md` edit per step 8, and stop — a run that
+writes zero ADRs is a valid outcome.
 
 ## 5. Allocate IDs and spawn architects
 
@@ -92,8 +115,12 @@ contain:
 
 - the assigned `ADR-NNNN` id (tell it to use exactly this id),
 - the decision to be made, phrased as the question from step 3,
-- the PRD path,
-- the accepted-research doc paths from step 2,
+- the PRD path — or, in a standalone run, the statement that this is a
+  repo-scoped platform decision (`scope: repo`, `derived-from: null`) with
+  the topic as stated, so the architect derives decision drivers from repo
+  conventions, existing accepted ADRs, and the decision context itself
+  instead of PRD requirements,
+- the accepted-research doc paths from step 2 (PRD runs),
 - any existing ADR paths that bear on the decision — and for a supersede
   candidate, the superseded ADR's path plus the instruction to set
   `supersedes: ADR-NNNN` in frontmatter and explain in Context what changed.
@@ -106,9 +133,11 @@ is your job.
 
 For each returned draft, before writing:
 
-- Verify the frontmatter carries the assigned id, `derived-from:` the PRD
-  id, and **`status: proposed`** — if the draft says anything else (even
-  `accepted`), force it to `proposed`.
+- Verify the frontmatter carries the assigned id and **`status: proposed`**
+  — if the draft says anything else (even `accepted`), force it to
+  `proposed`. PRD run: `scope: prd` (or absent — prd is the default) and
+  `derived-from:` the PRD id. Standalone run: `scope: repo` and
+  `derived-from: null`.
 - Verify all MADR sections from the `hive:writing-adrs` **Template** are present with
   ≥ 2 real options; if the draft is structurally incomplete, re-invoke that
   architect once with the specific gap named. Still incomplete ⇒ report the
@@ -131,7 +160,9 @@ considered alternative ("Accept <other option> instead"), then
 
 - **Accept** — the user explicitly accepts the chosen option. Only then:
   1. Flip the ADR's frontmatter to `status: accepted`.
-  2. Append its id to the PRD's `adrs:` frontmatter list (bare id, no link).
+  2. PRD run: append its id to the PRD's `adrs:` frontmatter list (bare id,
+     no link). Standalone run: no back-link — `/hive:comb` discovers
+     accepted `scope: repo` ADRs by glob.
   3. If it supersedes an older ADR: flip the old ADR's `status:` to
      `superseded` and add a forward link to the successor — per
      `writing-adrs`, these are the **only** edits ever permitted on an
@@ -142,9 +173,10 @@ considered alternative ("Accept <other option> instead"), then
   ("Accept the revised ADR (Recommended)" / "Revise further") and proceed
   as Accept only on that explicit confirmation.
 - **Reject / defer** — leave the file at `status: proposed` (its id stays
-  retired either way — ids are never reused), and record a one-line note in
-  the PRD's Open Questions that the decision is drafted but undecided
-  (`ADR-NNNN proposed, pending`).
+  retired either way — ids are never reused), and record a one-line note
+  that the decision is drafted but undecided (`ADR-NNNN proposed,
+  pending`) — in the PRD's Open Questions, or in `docs/adr/DECISIONS.md`
+  for a standalone run.
 
 An accepted ADR is final. If the user later changes their mind, the answer
 is a **new** `/hive:waggle` run that supersedes it — never an edit.
@@ -154,10 +186,12 @@ is a **new** `/hive:waggle` run that supersedes it — never an edit.
 Sync main first per the `gh-conventions` skill (`git switch main && git pull
 --ff-only origin main`) — never commit on a stale main. Then commit all of
 this run's doc changes together: new ADR files, the PRD frontmatter/Open
-Questions edits, and any `superseded` flips. Conventional commit, e.g.:
+Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), and any
+`superseded` flips. Conventional commit, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003
+docs(adr): add ADR-0001 CI provider (repo-scoped)
 ```
 
 Do not push issues, create issues, or touch anything under `.github` — this
@@ -167,5 +201,7 @@ command produces documents only. (`/hive:comb` pushes docs before materializing.
 
 End with a short summary: accepted ADRs (id + chosen option), proposed-but-
 undecided ADRs, worthiness-rejected candidates with where their rationale
-was recorded, and any superseded ADRs. Suggest `/hive:comb <PRD-id>` as the next
-step when the PRD's decision surface is covered.
+was recorded, and any superseded ADRs. For a PRD run, suggest
+`/hive:comb <PRD-id>` as the next step when the PRD's decision surface is
+covered. For a standalone run, note that the accepted repo-scoped ADR now
+binds every future plan automatically.
