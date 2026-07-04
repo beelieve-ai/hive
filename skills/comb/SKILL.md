@@ -195,8 +195,8 @@ already exists on GitHub and reuse/skip it.
 2. If the milestone exists, list its `hive:managed` issues:
    `gh issue list --milestone "<title>" --state all --json
    number,title,state,parent,issueType,labels`. Note any existing epic
-   (label `hive:managed` AND the mode-agnostic epic test: `issueType ==
-   "Epic"` OR label `type:epic`; more than one → abort and report) and
+   (label `hive:managed` AND the mode-agnostic epic test: `issueType.name
+   == "Epic"` OR label `type:epic`; more than one → abort and report) and
    existing tasks, for reuse below.
 
 ### 4.1 Milestone
@@ -262,7 +262,9 @@ cycle-free). Then for each task in that order:
    non-null, verify it still exists
    (`gh issue view <n> --json number,state,issueType,milestone,parent,labels,blockedBy`)
    and move on. If `issue:` is null but 4.0 found an existing
-   `hive:managed` Task in the milestone with the identical title, adopt
+   `hive:managed` task (per the mode-agnostic task test:
+   `issueType.name == "Task"` OR label `type:task`) in the milestone
+   with the identical title, adopt
    that number: verify it via `gh issue view --json`, write it back into
    plan.yaml, and move on — never create a duplicate.
 2. Otherwise create it. The body is the task's `body:` verbatim — it
