@@ -43,9 +43,9 @@ all of the following:
 - [ ] **Acceptance criteria** — measurable, checkable statements of done.
 - [ ] **Verification section** — see below.
 
-A task's `## Context` block may embed a fenced ```mermaid diagram when the
-flow or data shape is easier shown than told — GitHub renders it in the
-issue UI. Optional; fenced ASCII art only when mermaid cannot express the
+A task's `## Context` block may embed a ```` ```mermaid ```` fenced
+diagram when the flow or data shape is easier shown than told — GitHub
+renders it in the issue UI. Optional; fenced ASCII art only when mermaid cannot express the
 figure, never both forms of the same figure.
 
 ## Verification section (mandatory)

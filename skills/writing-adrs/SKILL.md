@@ -80,9 +80,9 @@ repo-relative link.
 ## Diagrams
 
 Where a figure clarifies the decision — the architecture at stake, the
-option topologies, a state machine — embed a fenced ```mermaid block in the
-relevant section (usually Context and Problem Statement or an option's
-subsection). Diagrams are optional: add one only where it aids
+option topologies, a state machine — embed a ```` ```mermaid ```` fenced
+block in the relevant section (usually Context and Problem Statement or
+an option's subsection). Diagrams are optional: add one only where it aids
 understanding. Fall back to fenced ASCII art only when mermaid cannot
 express the figure; never emit both forms of the same figure.
 

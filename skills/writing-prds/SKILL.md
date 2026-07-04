@@ -64,8 +64,8 @@ to sharpen it (via the grilling interview) rather than write around it.
 ## Diagrams
 
 Where a user flow, state machine, or context relationship is easier shown
-than told, embed a fenced ```mermaid block in the Problem or Requirements
-section. Diagrams are optional: add one only where it aids understanding.
+than told, embed a ```` ```mermaid ```` fenced block in the Problem or
+Requirements section. Diagrams are optional: add one only where it aids understanding.
 Fall back to fenced ASCII art only when mermaid cannot express the figure;
 never emit both forms of the same figure.
 

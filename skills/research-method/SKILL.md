@@ -80,8 +80,9 @@ No question may be silently dropped, merged away, or left half-answered.
 
 ## Diagrams
 
-Findings may embed fenced ```mermaid blocks under `### Findings` where a
-figure aids understanding — a discovered architecture, a sequence flow.
+Findings may embed ```` ```mermaid ```` fenced blocks under `### Findings`
+where a figure aids understanding — a discovered architecture, a sequence
+flow.
 Optional, never mandatory. Fall back to fenced ASCII art only when mermaid
 cannot express the figure; never emit both forms of the same figure.
 

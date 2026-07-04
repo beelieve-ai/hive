@@ -90,8 +90,9 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
 ## Diagrams
 
 - **Mermaid by default**: figures in any lifecycle artifact — PRD, RES,
-  ADR, plan.yaml epic/task bodies, issue bodies — are fenced ```mermaid
-  blocks. GitHub and most modern markdown tooling render them natively.
+  ADR, plan.yaml epic/task bodies, issue bodies — are ```` ```mermaid ````
+  fenced blocks. GitHub and most modern markdown tooling render them
+  natively.
 - **Only where they aid understanding** — flows, architectures, state
   machines, dependency graphs. Never a mandatory or empty diagram section.
 - **ASCII art is the fallback**, used only when mermaid cannot express the
