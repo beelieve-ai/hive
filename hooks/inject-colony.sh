@@ -15,12 +15,12 @@ import json, sys
 
 try:
     with open(sys.argv[1], "r", encoding="utf-8") as fh:
-        content = fh.read()
+        content = fh.read() + "\n\n"
 except OSError:
-    # No conventions file → inject nothing rather than failing the session.
-    sys.exit(0)
+    # No conventions file → still inject the plugin root line.
+    content = ""
 
-content += "\n\nHive plugin root: " + sys.argv[2]
+content += "Hive plugin root: " + sys.argv[2]
 
 print(json.dumps({
     "hookSpecificOutput": {
