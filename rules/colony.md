@@ -91,14 +91,20 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
 
 - **Human gates are mandatory**: PRD approval, ADR acceptance, plan approval
   before materialization. Never skip, never auto-accept.
-- **All user interaction goes through the `AskUserQuestion` tool** — every
-  question, gate verdict, and PAUSE resolution: one decision per call, the
-  recommended answer as the first option labelled `(Recommended)` with the
-  reason in its description, real alternatives as the other options, and the
-  tool's automatic "Other" as the escape hatch. Plain prose only for genuinely
-  open-ended asks (e.g. "what is the idea?"). Selecting an explicit
-  Approve/Accept option **is** the explicit human declaration the gates
-  require — silence or enthusiasm still is not.
+- **All user interaction goes through the `AskUserQuestion` tool — no
+  exceptions.** Every question, gate verdict, PAUSE resolution, and
+  missing-argument prompt: one decision per call, the recommended answer as
+  the first option labelled `(Recommended)` with the reason in its
+  description, real alternatives as the other options, and the tool's
+  automatic "Other" as the escape hatch. Open-ended asks (e.g. "what is the
+  idea?") are **not** exempt: still call the tool, offer your best
+  context-derived guesses as options (existing docs, repo signals, recent
+  work), and let "Other" carry the free-form answer. Never ask in plain
+  prose. Selecting an explicit Approve/Accept option **is** the explicit
+  human declaration the gates require — silence or enthusiasm still is not.
+  Sole exception: in a headless/non-interactive run the tool genuinely does
+  not exist — state that limitation once, then fall back to prose; **gates
+  still never auto-approve there**.
 - **Reviewers are read-only** (no Write/Edit). Verdict loops belong to the
   orchestrator.
 - **Docs = intent, issues = execution state.** Never duplicate execution

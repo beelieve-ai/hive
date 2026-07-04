@@ -14,7 +14,8 @@ until the shared-understanding gate below has passed.
 
 ## One question at a time — never a form
 
-Ask exactly one question, then wait for the answer before asking the next.
+Ask exactly one question — always via the **AskUserQuestion** tool (below) —
+then wait for the answer before asking the next.
 Presenting multiple questions at once is bewildering and lets the user skim
 past the hard ones. A numbered list of questions is a form; never send one.
 
@@ -56,9 +57,14 @@ AskUserQuestion({
 })
 ```
 
-Where the answer space is genuinely open (e.g. "what is the idea, in one
-sentence?"), plain prose is fine — lean on the tool for every concrete
-decision, trade-off, and confirmation that makes up the body of the grill.
+**No exceptions — even genuinely open questions go through the tool.** When
+the answer space is open (e.g. "what is the idea, in one sentence?"), don't
+fall back to prose: offer your best context-derived guesses as options
+(recent files, existing docs, repo signals — each a plausible concrete
+candidate), and the automatic "Other" carries the free-form answer. If you
+truly have no signal to guess from, offer example directions as options so
+the user sees the expected shape of an answer — "Other" remains the real
+input path.
 
 ## Chase the decision tree branch by branch
 

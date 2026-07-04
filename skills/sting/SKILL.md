@@ -43,7 +43,10 @@ else.** Explicitly:
 
 `$ARGUMENTS` is a single document reference — a file path or an artifact ID:
 
-- **Empty** ⇒ ask the user which document to grill and stop until answered.
+- **Empty** ⇒ ask which document to grill via **AskUserQuestion**: offer
+  the likeliest candidates as options (glob `docs/**` for PRD/RES/ADR/plan
+  files, most recently modified first), "Other" for any path outside them.
+  Stop until answered.
 - **Path** (contains `/` or ends in `.md`/`.yaml`, and the file exists) ⇒
   use it directly. Any markdown/yaml document in the repo is fair game,
   including free-form design notes outside `docs/`.

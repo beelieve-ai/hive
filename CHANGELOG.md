@@ -29,12 +29,14 @@ plugin.
 - Commands, skills, and agents are namespaced under `hive:` — commands are
   invoked as `/hive:pollinate` … `/hive:sting`, and agents are spawned by their
   `hive:<name>` `subagent_type` (a **bare** agent name does not resolve).
-- All user interaction runs through the **AskUserQuestion** tool — grilling
-  interview questions, the PRD/ADR/plan gate verdicts, `/hive:sting` edit
-  agreements, and `/hive:swarm` PAUSE resolutions: one decision per call, the
-  recommendation as the first option labelled `(Recommended)`, "Other" as the
-  escape hatch. Codified as a colony ground rule; plain prose remains only for
-  genuinely open-ended asks.
+- All user interaction runs through the **AskUserQuestion** tool, no
+  exceptions — grilling interview questions, the PRD/ADR/plan gate verdicts,
+  `/hive:sting` edit agreements, `/hive:swarm` PAUSE resolutions, and
+  missing-argument prompts: one decision per call, the recommendation as the
+  first option labelled `(Recommended)`, "Other" as the escape hatch. Even
+  open-ended asks go through the tool, with context-derived guesses as
+  options and "Other" carrying the free-form answer. Codified as a colony
+  ground rule.
 - Cross-link and issue-body URLs are now built from the **current** repo via
   `gh repo view --json nameWithOwner,defaultBranchRef` instead of a hardcoded
   `beelieve-ai/hive` — the plugin produces correct links in any repo. The

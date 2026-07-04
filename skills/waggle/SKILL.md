@@ -28,11 +28,15 @@ individually give.
   decisions the PRD raises.
 
 Resolve the PRD file by globbing `docs/prd/PRD-NNN-*.md`. Fail loudly on
-zero or multiple matches — never guess. If `$ARGUMENTS` is empty, ask the
-user which PRD to run against and stop until answered.
+zero or multiple matches — never guess. If `$ARGUMENTS` is empty, ask which
+PRD to run against via **AskUserQuestion**: glob `docs/prd/PRD-*.md` and
+offer the found PRDs as options (id + title, approved ones first), "Other"
+for anything else. Stop until answered.
 
-Read the PRD. If its `status:` is `draft`, warn the user that ADRs normally
-follow PRD approval and ask whether to proceed; continue only on their yes.
+Read the PRD. If its `status:` is `draft`, put the decision via
+**AskUserQuestion**: warn that ADRs normally follow PRD approval, options
+**"Stop — approve the PRD first (Recommended)"** and **"Proceed on the
+draft anyway"**. Continue only on an explicit Proceed selection.
 
 ## 2. Gather inputs
 
@@ -134,8 +138,9 @@ considered alternative ("Accept <other option> instead"), then
      accepted ADR.
 - **Accept a different option** — while `status: proposed` the doc is
   editable: update the Decision Outcome (and consequences) to the user's
-  chosen option, show the revised text, then on their confirmation proceed
-  as Accept.
+  chosen option, show the revised text, then confirm via **AskUserQuestion**
+  ("Accept the revised ADR (Recommended)" / "Revise further") and proceed
+  as Accept only on that explicit confirmation.
 - **Reject / defer** — leave the file at `status: proposed` (its id stays
   retired either way — ids are never reused), and record a one-line note in
   the PRD's Open Questions that the decision is drafted but undecided

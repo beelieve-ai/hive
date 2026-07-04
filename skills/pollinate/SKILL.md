@@ -12,8 +12,13 @@ interview yourself — no subagents are dispatched by this command.
 
 ## Step 0 — Setup
 
-1. Read the idea from `$ARGUMENTS`. If `$ARGUMENTS` is empty, ask the user for
-   the idea in one sentence before anything else.
+1. Read the idea from `$ARGUMENTS`. If `$ARGUMENTS` is empty, ask for the
+   idea via **AskUserQuestion** before anything else — never in plain prose:
+   offer your best context-derived guesses as options (open TODOs, recent
+   branches/commits, gaps the repo suggests), each as a concrete one-line
+   idea; the automatic "Other" carries the user's own one-sentence idea. If
+   the repo gives no signal, offer example directions so the user sees the
+   expected shape of an answer.
 2. **Load the `hive:grilling` and `hive:domain-modeling` skills now** (Skill
    tool), before the first question. They govern the entire interview. Also
    load `hive:writing-prds` and `hive:crosslinking` — you will need them for
