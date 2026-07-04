@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.1.1] — 2026-07-04
+
+### Fixed
+- `CLAUDE.md` semantic-versioning section no longer instructs bumping a
+  non-existent `version` field in `marketplace.json`; `.claude-plugin/plugin.json`
+  is documented as the single source of truth.
+
 ## [0.1.0] — 2026-07-03
 
 Initial release: the Hive AI-DLC is now an installable, portable Claude Code
