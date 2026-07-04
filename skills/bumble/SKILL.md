@@ -36,7 +36,10 @@ Ground rules that bind the whole run:
 
 1. **Strip `--yolo`** wherever it appears among the whitespace-split tokens
    (it may precede or follow the id). Record whether it was present as the
-   run's `yolo` flag. The remaining single token is the **PRD id**.
+   run's `yolo` flag. Exactly one token must then remain — the **PRD id**.
+   **More than one token** → the arguments are ambiguous (bumble takes no
+   topic; never silently drop tokens): pose the interpretation via
+   **AskUserQuestion** — never auto-answered, even under `--yolo`.
 2. Normalise the id: accept `PRD-NNN` or a **bare `NNN`**; zero-pad the number
    to three digits (`3` → `PRD-003`).
 3. **Empty remainder** (no id given) → ask with **AskUserQuestion**: glob
@@ -76,6 +79,8 @@ never reproduce a phase's own trigger logic.
 | State | Action |
 |---|---|
 | PRD glob → 0 or >1 matches | **HALT** — report the candidates found |
+| `status:` missing or any value not listed below | **HALT** — unknown lifecycle state, report it |
+| >1 plan.yaml with `prd:` matching | **HALT** — report the candidate plans |
 | `status: draft` | **HALT** — approve the PRD first (pollinate stays interactive), then re-run bumble |
 | `status: implemented` | **DONE** — final report, nothing to do |
 | `status: planned`, no plan.yaml with `prd:` matching | **HALT** — inconsistent state, report it |
@@ -178,7 +183,11 @@ When the run ends (DONE or halt), report:
    ADR at the per-ADR acceptance gate.
 3. **Artifacts produced** — RES ids, ADR ids, PLAN id, milestone number and
    title, epic issue number, and the `task key → issue #` table if swarm ran.
-4. **Terminal state** — either **DONE** (PRD `status: implemented`, milestone
+4. **Open deferred decisions** — every `ADR-NNNN proposed, pending` note in
+   the PRD's Open Questions. The cascade legitimately advances past these
+   (they are settled records), but the run must never bury an architecture
+   decision that is still undecided.
+5. **Terminal state** — either **DONE** (PRD `status: implemented`, milestone
    closed) or the **halt reason** with the phase that halted and its report.
 
 ## Context discipline (binding throughout)
