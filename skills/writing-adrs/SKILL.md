@@ -93,7 +93,9 @@ express the figure; never emit both forms of the same figure.
 - **proposed** — set by the architect at draft time. Freely editable while
   the options are presented and discussed.
 - **accepted** — set **only by the human** during `/hive:waggle`; never
-  auto-accept. On acceptance a `scope: prd` ADR's id is appended to the
+  auto-accept (sole delegation exception: `/hive:bumble --yolo` answers the
+  acceptance gate for ADRs drafted in that run, per the colony carve-out).
+  On acceptance a `scope: prd` ADR's id is appended to the
   PRD's `adrs:` frontmatter; a `scope: repo` ADR needs no back-link —
   `/hive:comb` discovers it by globbing `docs/adr/` for accepted
   repo-scoped ADRs.

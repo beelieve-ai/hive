@@ -88,7 +88,7 @@ The full rules — naming, cross-linking, ID allocation, `gh` automation ground 
 - IDs are append-only and never reused; accepted ADRs are never edited, only superseded via `/hive:waggle`.
 - Docs hold intent, issues hold execution state — status is synced between them only at `/hive:comb` materialization and `/hive:swarm` completion.
 - All `gh` automation uses `--json` output; new issue/PR numbers are parsed strictly from the creation URL.
-- Requires GitHub CLI ≥ 2.94.0 with native issue types, sub-issues, and dependencies.
+- Requires GitHub CLI ≥ 2.94.0 with sub-issues and dependencies; native issue types are used on organization repos, with a `type:*` label fallback on user-owned repos.
 
 ## Versioning & releases
 
