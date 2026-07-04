@@ -34,6 +34,9 @@ absolute URL**, built for the **current** repo — never a hardcoded owner/repo.
 gh repo view --json nameWithOwner,defaultBranchRef \
   -q '.nameWithOwner + " " + .defaultBranchRef.name'
 # -> "<owner>/<repo> <default-branch>"
+# If <default-branch> comes back empty (brand-new repo, nothing pushed),
+# fall back to the local branch per hive:gh-conventions:
+#   git symbolic-ref --short HEAD
 ```
 
 Every doc link then takes the form:
