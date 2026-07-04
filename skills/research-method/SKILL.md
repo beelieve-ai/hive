@@ -78,6 +78,14 @@ No question may be silently dropped, merged away, or left half-answered.
   "Unknowable now" items that block requirements should also surface in the
   PRD's Open Questions so `/hive:waggle` and `/hive:comb` see them.
 
+## Diagrams
+
+Findings may embed ```` ```mermaid ```` fenced blocks under `### Findings`
+where a figure aids understanding — a discovered architecture, a sequence
+flow.
+Optional, never mandatory. Fall back to fenced ASCII art only when mermaid
+cannot express the figure; never emit both forms of the same figure.
+
 ## Template
 
 Scaffold a new research doc from this skeleton (this skill is the source of

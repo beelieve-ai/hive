@@ -77,6 +77,15 @@ repo-relative link.
   a cons list. "Rejected because driver D2 (operational simplicity)
   outweighs its performance edge" beats "has downsides".
 
+## Diagrams
+
+Where a figure clarifies the decision — the architecture at stake, the
+option topologies, a state machine — embed a ```` ```mermaid ```` fenced
+block in the relevant section (usually Context and Problem Statement or
+an option's subsection). Diagrams are optional: add one only where it aids
+understanding. Fall back to fenced ASCII art only when mermaid cannot
+express the figure; never emit both forms of the same figure.
+
 ## Status lifecycle — append-only
 
 `proposed → accepted | superseded`:
