@@ -9,6 +9,15 @@ authoritative version is the `version` field in
 ## [0.2.0] — 2026-07-04
 
 ### Added
+- **Label-mode fallback for issue types**: user-owned repos have no custom
+  issue types, so `/hive:comb` now probes `.owner.type` once — `User` →
+  create epics/tasks with `type:epic` / `type:task` labels instead of
+  `--type`; `Organization` → native types as before. All discovery filters
+  (`/hive:comb` pre-scan, `/hive:swarm`) are mode-agnostic (`issueType` OR
+  `type:*` label).
+- `/hive:comb` now ensures all required labels exist idempotently
+  (`gh label create --force`) before the first issue create — a fresh repo
+  has none, and `gh issue create --label` fails on missing labels.
 - `/hive:bumble <PRD-id> [--yolo]` — an autopilot command that cascades
   Research → ADR → Plan → Build for one approved PRD. It derives the current
   phase from the artifacts on disk (no state file), pauses at every human gate

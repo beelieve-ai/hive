@@ -1,6 +1,6 @@
 ---
 name: gh-conventions
-description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types and dependencies, DAG reads, issue/PR number capture, and the branch/PR/squash-merge flow. Load whenever creating or editing milestones, issues, or PRs for hive:managed work.
+description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types (org repos) or type:* label fallback (user repos) and dependencies, DAG reads, issue/PR number capture, and the branch/PR/squash-merge flow. Load whenever creating or editing milestones, issues, or PRs for hive:managed work.
 ---
 
 # gh conventions
@@ -76,10 +76,42 @@ or multiple matches.
 
 ## Issues
 
+### Issue-type mode (probe once before the first create)
+
+Custom issue types only exist on **organization** repos. Probe:
+
+```bash
+gh api repos/{owner}/{repo} --jq .owner.type
+```
+
+- `Organization` → **native mode**: create with `--type Epic` / `--type Task`.
+- `User` → **label mode**: omit `--type`; add `type:epic` / `type:task` to
+  the `--label` list instead.
+
+Reads are mode-agnostic — filter on `issueType` **OR** the `type:*` label —
+so only the write path needs the probe.
+
+### Ensure labels exist (before the first create)
+
+A fresh repo has no labels; `gh issue create --label` fails on missing ones.
+Ensure idempotently (`--force` updates instead of erroring on existing):
+
+```bash
+gh label create hive:managed --force
+gh label create phase:build --force
+gh label create phase:review --force
+# label mode only:
+gh label create type:epic --force
+gh label create type:task --force
+```
+
 ### Create an epic
 
 ```bash
+# native mode
 gh issue create --title "..." --body "..." --milestone "<milestone title>" --label hive:managed --type Epic
+# label mode
+gh issue create --title "..." --body "..." --milestone "<milestone title>" --label hive:managed,type:epic
 ```
 
 Note: `--milestone` on `gh issue create` takes the **title**, not the number.
@@ -89,7 +121,10 @@ by filtering on them.
 ### Create a task
 
 ```bash
+# native mode
 gh issue create --title "..." --body "..." --milestone "<milestone title>" --parent <epic#> --blocked-by <n1>,<n2> --label phase:build,hive:managed --type Task
+# label mode
+gh issue create --title "..." --body "..." --milestone "<milestone title>" --parent <epic#> --blocked-by <n1>,<n2> --label phase:build,hive:managed,type:task
 ```
 
 Create tasks in **topological order** (dependencies first) so every
@@ -120,6 +155,11 @@ All eight fields are required: epic discovery needs `issueType` + `labels`,
 task-set filtering needs `parent`, unblocking-most-first selection needs
 `blocking`, and readiness needs `state` + `blockedBy`.
 
+**Epic test** (mode-agnostic): `issueType.name == "Epic"` **OR** labels
+contain `type:epic`. **Task test**: `issueType.name == "Task"` **OR** labels
+contain `type:task`. In label mode `issueType` is simply `null` — the field
+still exists in the JSON, so requesting it never fails.
+
 Shape caveat (verified live): `blockedBy` and `blocking` are **nested
 objects** `{"nodes": [{number, state, ...}], "totalCount": N}`, not flat
 arrays — on both `gh issue list` and `gh issue view`. Read blocker numbers
@@ -141,8 +181,8 @@ non-interactive stdout is a single URL — capture the new number from it:
 gh issue view <n> --json number,title,issueType,milestone,parent,labels,blockedBy
 ```
 
-Confirm type, milestone, parent, labels, and blockedBy all match what was
-requested. This exception applies **only** to number capture from these two
+Confirm type (native mode) or `type:*` label (label mode), milestone, parent,
+labels, and blockedBy all match what was requested. This exception applies **only** to number capture from these two
 create commands; every other read stays `--json`.
 
 ## Branch / PR flow

@@ -181,6 +181,12 @@ already exists on GitHub and reuse/skip it.
 
 ### 4.0 Pre-scan (always, even on a fresh run)
 
+0. **Issue-type mode probe** (per gh-conventions):
+   `gh api repos/{owner}/{repo} --jq .owner.type` — `Organization` →
+   native `--type` mode; `User` → label mode (`type:epic` / `type:task`
+   labels, no `--type`). Then **ensure all labels exist** idempotently:
+   `gh label create <name> --force` for `hive:managed`, `phase:build`,
+   `phase:review`, and — label mode only — `type:epic`, `type:task`.
 1. **Milestone lookup by title**: per gh-conventions,
    `gh api "repos/{owner}/{repo}/milestones?state=all" --paginate` and
    match the plan's `milestone_title` exactly against `.title`. Exactly
@@ -189,8 +195,9 @@ already exists on GitHub and reuse/skip it.
 2. If the milestone exists, list its `hive:managed` issues:
    `gh issue list --milestone "<title>" --state all --json
    number,title,state,parent,issueType,labels`. Note any existing epic
-   (`issueType == "Epic"` with label `hive:managed`; more than one →
-   abort and report) and existing tasks, for reuse below.
+   (label `hive:managed` AND the mode-agnostic epic test: `issueType ==
+   "Epic"` OR label `type:epic`; more than one → abort and report) and
+   existing tasks, for reuse below.
 
 ### 4.1 Milestone
 
@@ -225,7 +232,10 @@ If 4.0 found an existing `hive:managed` epic in the milestone, reuse its
 number. Otherwise create it from the plan's `epic:` block:
 
 ```
+# native mode
 gh issue create --title "<epic.title>" --body "<epic.body>" --milestone "<milestone_title>" --label hive:managed --type Epic
+# label mode
+gh issue create --title "<epic.title>" --body "<epic.body>" --milestone "<milestone_title>" --label hive:managed,type:epic
 ```
 
 The `hive:managed` label **and** the milestone are load-bearing —
@@ -238,7 +248,8 @@ Capture the epic number from the create command's URL stdout: strict
 parse of exactly one `/issues/<number>` match — **fail on no match or
 multiple matches** — then verify with
 `gh issue view <n> --json number,title,issueType,milestone,labels` that
-type, milestone, and label all match what was requested.
+type (native mode) or `type:epic` label (label mode), milestone, and label
+all match what was requested.
 
 ### 4.4 Task issues — topological order, immediate write-back
 
@@ -261,7 +272,10 @@ cycle-free). Then for each task in that order:
    the issue numbers already recorded in plan.yaml:
 
    ```
+   # native mode
    gh issue create --title "<task.title>" --body "<task.body>" --milestone "<milestone_title>" --parent <epic#> --blocked-by <n1>,<n2> --label phase:build,hive:managed --type Task
+   # label mode
+   gh issue create --title "<task.title>" --body "<task.body>" --milestone "<milestone_title>" --parent <epic#> --blocked-by <n1>,<n2> --label phase:build,hive:managed,type:task
    ```
 
    Omit `--blocked-by` entirely for tasks with no dependencies. If any
@@ -270,7 +284,8 @@ cycle-free). Then for each task in that order:
 3. Capture the number from URL stdout (strict single-match
    `/issues/<number>` parse, fail on zero/multiple) and verify with
    `gh issue view <n> --json number,title,issueType,milestone,parent,labels,blockedBy`
-   that type, milestone, parent, labels, and blockedBy all match.
+   that type (native mode) or `type:task` label (label mode), milestone,
+   parent, labels, and blockedBy all match.
 4. **Immediately Edit plan.yaml**, setting this task's `issue: <n>` —
    before creating the next issue, never batched at the end. This
    write-back is the resume record.

@@ -160,8 +160,16 @@ Verify these against the **current** repo/org before materializing issues
 (originally validated on `beelieve-ai` with gh 2.96.0, 2026-07-03):
 
 - `gh` **≥ 2.94.0** — check `gh --version`.
-- The target org must expose native issue types **Task, Bug, Feature, Epic** —
-  native types are used, no type labels. Orgs without them need a fallback.
+- **Issue-type mode** — probe once per materialization:
+  `gh api repos/{owner}/{repo} --jq .owner.type`.
+  - `Organization` → **native types**: the org must expose issue types
+    **Task, Bug, Feature, Epic**; create with `--type`, no type labels.
+  - `User` → **label mode**: custom issue types do not exist on user-owned
+    repos. Create without `--type`, adding the `type:epic` / `type:task`
+    label instead.
+
+  Reads never need the probe: discovery filters match **either** the native
+  `issueType` **or** the `type:*` label (see gh-conventions).
 - `gh issue edit` uses `--parent` (not the older `--set-parent`, which does
   **not** exist).
 - JSON fields `blockedBy`, `blocking`, `parent`, `issueType`, `subIssues`
@@ -169,11 +177,17 @@ Verify these against the **current** repo/org before materializing issues
 
 ## Labels
 
-Only three labels exist:
+Only these labels exist:
 
 - `hive:managed` — marks every issue created by this system.
 - `phase:build` — tasks are created with it.
 - `phase:review` — flipped to when guard review starts.
+- `type:epic` / `type:task` — **label mode only** (user-owned repos): stand
+  in for the native Epic/Task issue types.
+
+Labels are **ensured idempotently before the first issue create**
+(`gh label create <name> --force` — see gh-conventions); a fresh repo has
+none of them.
 
 The `phase:*` flip is **cosmetic UI state only** — resume and ready logic
 never keys off labels. The spec's four doc-phase labels
