@@ -162,8 +162,10 @@ Verify these against the **current** repo/org before materializing issues
 - `gh` **≥ 2.94.0** — check `gh --version`.
 - **Issue-type mode** — probe once per materialization:
   `gh api repos/{owner}/{repo} --jq .owner.type`.
-  - `Organization` → **native types**: the org must expose issue types
-    **Task, Bug, Feature, Epic**; create with `--type`, no type labels.
+  - `Organization` → **native types** — but verify, don't assume: the org
+    must expose the **Epic** and **Task** issue types
+    (`gh api orgs/{owner}/issue-types`); either missing → fall back to
+    label mode. Both present → create with `--type`, no type labels.
   - `User` → **label mode**: custom issue types do not exist on user-owned
     repos. Create without `--type`, adding the `type:epic` / `type:task`
     label instead.

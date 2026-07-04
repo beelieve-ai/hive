@@ -84,7 +84,10 @@ Custom issue types only exist on **organization** repos. Probe:
 gh api repos/{owner}/{repo} --jq .owner.type
 ```
 
-- `Organization` → **native mode**: create with `--type Epic` / `--type Task`.
+- `Organization` → verify the org exposes the **Epic** and **Task** types:
+  `gh api orgs/{owner}/issue-types --jq '.[].name'` (verified live on
+  `beelieve-ai`). Both present → **native mode**: create with `--type Epic`
+  / `--type Task`. Either missing → fall back to **label mode** and note it.
 - `User` → **label mode**: omit `--type`; add `type:epic` / `type:task` to
   the `--label` list instead.
 

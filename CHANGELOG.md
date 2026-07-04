@@ -12,7 +12,9 @@ authoritative version is the `version` field in
 - **Label-mode fallback for issue types**: user-owned repos have no custom
   issue types, so `/hive:comb` now probes `.owner.type` once — `User` →
   create epics/tasks with `type:epic` / `type:task` labels instead of
-  `--type`; `Organization` → native types as before. All discovery filters
+  `--type`; `Organization` → native types after verifying the org exposes
+  Epic and Task (orgs missing either also fall back to label mode instead
+  of failing mid-materialization). All discovery filters
   (`/hive:comb` pre-scan, `/hive:swarm`) are mode-agnostic (`issueType` OR
   `type:*` label).
 - `/hive:comb` now ensures all required labels exist idempotently

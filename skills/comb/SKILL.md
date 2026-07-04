@@ -183,7 +183,10 @@ already exists on GitHub and reuse/skip it.
 
 0. **Issue-type mode probe** (per gh-conventions):
    `gh api repos/{owner}/{repo} --jq .owner.type` — `Organization` →
-   native `--type` mode; `User` → label mode (`type:epic` / `type:task`
+   native `--type` mode, after verifying the org actually exposes the
+   **Epic** and **Task** types (`gh api orgs/{owner}/issue-types --jq
+   '.[].name'`); either missing → **fall back to label mode and note it
+   in the summary**. `User` → label mode (`type:epic` / `type:task`
    labels, no `--type`). Then **ensure all labels exist** idempotently:
    `gh label create <name> --force` for `hive:managed`, `phase:build`,
    `phase:review`, and — label mode only — `type:epic`, `type:task`.
