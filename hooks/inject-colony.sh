@@ -4,19 +4,23 @@
 # `.claude/rules/` auto-load, which installed plugins cannot provide.
 set -euo pipefail
 
-colony="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}/rules/colony.md"
+root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+colony="$root/rules/colony.md"
 
-# Emit the file's contents as SessionStart additionalContext. Encoding via
-# python3 keeps the JSON valid regardless of what colony.md contains.
-python3 - "$colony" <<'PY'
+# Emit the file's contents as SessionStart additionalContext, with the resolved
+# plugin root appended so sessions can locate the plugin. Encoding via python3
+# keeps the JSON valid regardless of what colony.md contains.
+python3 - "$colony" "$root" <<'PY'
 import json, sys
 
 try:
     with open(sys.argv[1], "r", encoding="utf-8") as fh:
-        content = fh.read()
+        content = fh.read() + "\n\n"
 except OSError:
-    # No conventions file → inject nothing rather than failing the session.
-    sys.exit(0)
+    # No conventions file → still inject the plugin root line.
+    content = ""
+
+content += "Hive plugin root: " + sys.argv[2]
 
 print(json.dumps({
     "hookSpecificOutput": {

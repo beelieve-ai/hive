@@ -70,12 +70,15 @@ Ground rules that bind every step:
    raise the limit and re-run until the returned count is below it.
 
 2. **Discover the epic**: filter for issues that carry the `hive:managed`
-   label AND have `issueType == "Epic"`. There must be **exactly one** —
-   abort with a report on zero matches (milestone not materialized by
-   /hive:comb?) or multiple matches (corrupted milestone). Capture its number
-   as `epic#`.
+   label AND are epics per the mode-agnostic test (`issueType.name ==
+   "Epic"` OR label `type:epic` — label mode covers user-owned repos, where native
+   issue types don't exist and `issueType` is null). There must be
+   **exactly one** — abort with a report on zero matches (milestone not
+   materialized by /hive:comb?) or multiple matches (corrupted milestone).
+   Capture its number as `epic#`.
 3. **Task set** = issues with the `hive:managed` label AND
-   `parent.number == epic#` AND `issueType == "Task"`. If any
+   `parent.number == epic#` AND the mode-agnostic task test
+   (`issueType.name == "Task"` OR label `type:task`). If any
    `hive:managed` issue in the milestone is neither the epic nor parented
    to it (an orphaned managed task), **abort** with a report — never work
    an inconsistent DAG. Issues without `hive:managed` are not yours;

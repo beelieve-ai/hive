@@ -41,6 +41,11 @@ Two sources, both mandatory (per the `research-method` skill):
   question. Make each one explicit and **append it to the PRD's Open
   Questions section now** — the PRD stays the source of truth.
 
+Open Questions entries that are settlement records — worthiness-rejection
+rationales ("…: not ADR-worthy (…)") or "ADR-NNNN proposed, pending"
+notes — are records of decisions, not questions: never treat them as
+researchable or dispatch scouts for them.
+
 Drop questions already answered by previously linked RES docs (step 1.3).
 If no open questions remain, report that the PRD needs no foraging and
 stop — do not create empty research docs.
