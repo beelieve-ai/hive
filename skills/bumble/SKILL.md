@@ -72,7 +72,8 @@ frontmatter for swarm.
 ## Step 3 — Routing
 
 Read the PRD (glob `docs/prd/<id>-*.md`) and route on its `status:` plus the
-presence of a plan.yaml whose `prd:` matches. **Checkpoints first, then the
+presence of a plan.yaml whose `prd:` matches — discovered exactly as comb's
+Step 0.3 does: grep `docs/plans/PLAN-*.yaml` for `prd: <id>`. **Checkpoints first, then the
 always-enter cascade** — every phase is idempotent and self-noops, so you
 never reproduce a phase's own trigger logic.
 
@@ -138,6 +139,10 @@ self-encoded by routing — **no plan.yaml at entry means comb drafts the plan
 fresh this run, so it is auto-approvable; a pre-existing plan.yaml (or a
 pre-existing `proposed` ADR) is ALWAYS posed to the human even under
 `--yolo`**, so a plan a human once Declined is never silently materialized.
+ADR provenance is a **snapshot at waggle entry**: before executing waggle,
+glob `docs/adr/ADR-*.md` and record the ids whose `status:` is `proposed` —
+any acceptance gate for an id in that snapshot goes to the human; only ids
+absent from it (drafted this run) are auto-acceptable.
 
 **Never auto-answered under any flag:** every swarm PAUSE, every error/halt
 report, comb's 3-iteration abort, waggle's incomplete-draft failure, every
