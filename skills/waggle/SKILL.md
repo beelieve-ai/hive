@@ -78,6 +78,12 @@ the draft and gating it: resume that ADR's step-7 acceptance gate first,
 before any new drafting — never allocate a fresh id for a decision an
 existing proposed draft already covers.
 
+Also repair the Accept-path crash window: any `status: accepted` ADR with
+`derived-from:` this PRD whose id is missing from the PRD's `adrs:`
+frontmatter list means a prior run was interrupted mid-Accept — append the
+id now and re-run the remaining step-7 Accept bookkeeping (supersede flip,
+bedrock digest sync) for it; all of it is idempotent.
+
 PRD run: from the PRD (requirements, Open Questions, body) and the accepted
 research findings, list the candidate architecture decisions — each phrased
 as a neutral question ("How do we persist X?", "Which protocol between A

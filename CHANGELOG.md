@@ -31,8 +31,10 @@ authoritative version is the `version` field in
 - The SessionStart hook now injects the resolved plugin root (a `Hive plugin
   root:` line) alongside the conventions.
 - `/hive:waggle` is now idempotent across re-runs: it resumes orphaned
-  `status: proposed` drafts and skips candidates already settled (covered by
-  an accepted ADR, an explicit defer, or a recorded worthiness rationale).
+  `status: proposed` drafts, skips candidates already settled (covered by
+  an accepted ADR, an explicit defer, or a recorded worthiness rationale),
+  and repairs accepted ADRs a mid-Accept interruption left out of the
+  PRD's `adrs:` list.
 
 ### Fixed
 - `/hive:waggle` supersede now replaces the superseded id in the PRD's `adrs:`
