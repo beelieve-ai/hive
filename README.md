@@ -1,8 +1,21 @@
 # Hive 🐝
 
-An AI-driven development lifecycle (AI-DLC) for [beelieve-ai](https://github.com/beelieve-ai), built on Claude Code skills and agents.
+An AI-driven development lifecycle (AI-DLC) for [beelieve-ai](https://github.com/beelieve-ai), built on Claude Code skills, agents, and hooks and packaged as an installable plugin.
 
 **Documents in `docs/` are the source of truth for intent. GitHub Issues are the execution layer.** Every stage transition that matters passes through a human approval gate — nothing is auto-accepted.
+
+## Install
+
+Hive ships as a Claude Code plugin. Add the marketplace and install it:
+
+```
+/plugin marketplace add beelieve-ai/hive
+/plugin install hive@beelieve-ai
+```
+
+Commands are then available namespaced under `hive:` — `/hive:pollinate`, `/hive:forage`, `/hive:waggle`, `/hive:comb`, `/hive:swarm`, `/hive:sting` — and work in **any** repo: doc links and issue bodies are built from the current repo's `gh` remote, and the conventions in `rules/colony.md` are injected at session start. Update later with `/plugin update` (a new version arrives only when `plugin.json`'s `version` is bumped).
+
+**Local development** (working on Hive itself): load the plugin straight from a checkout with `claude --plugin-dir .`, or add the local path as a marketplace (`/plugin marketplace add /path/to/hive`).
 
 ## The flow
 
@@ -12,26 +25,26 @@ Idea → PRD → Research → ADR → Plan → Build → Review
 
 | Stage | Command | Produces | Human gate |
 |---|---|---|---|
-| Idea → PRD | `/pollinate <idea>` | `docs/prd/PRD-NNN-slug.md` via a one-question-at-a-time grilling interview | PRD approval |
-| Research | `/forage <PRD-id>` | `docs/research/RES-NNN-*.md` — scout agents answer the PRD's open questions in parallel | all research docs `status: answered` |
-| ADR | `/waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision | ADR acceptance |
-| Plan | `/comb <PRD-id>` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG | plan approval before materialization |
-| Build + Review | `/swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged | merge failures pause with the PR URL |
-| Anytime | `/sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
+| Idea → PRD | `/hive:pollinate <idea>` | `docs/prd/PRD-NNN-slug.md` via a one-question-at-a-time grilling interview | PRD approval |
+| Research | `/hive:forage <PRD-id>` | `docs/research/RES-NNN-*.md` — scout agents answer the PRD's open questions in parallel | all research docs `status: answered` |
+| ADR | `/hive:waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision | ADR acceptance |
+| Plan | `/hive:comb <PRD-id>` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG | plan approval before materialization |
+| Build + Review | `/hive:swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged | merge failures pause with the PR URL |
+| Anytime | `/hive:sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
 
 A typical end-to-end run:
 
 ```
-/pollinate a CLI that syncs labels across repos   # interview → PRD draft → approve it
-/forage PRD-001                                   # scouts answer open questions
-/waggle PRD-001                                   # decide architecture → accept ADRs
-/comb PRD-001                                     # plan → review → approve → issues created
-/swarm 1                                          # build the milestone to completion
+/hive:pollinate a CLI that syncs labels across repos   # interview → PRD draft → approve it
+/hive:forage PRD-001                                   # scouts answer open questions
+/hive:waggle PRD-001                                   # decide architecture → accept ADRs
+/hive:comb PRD-001                                     # plan → review → approve → issues created
+/hive:swarm 1                                          # build the milestone to completion
 ```
 
 ## How execution works
 
-`/comb` turns an approved plan into one **milestone per goal**, with an **Epic issue** and **Task sub-issues** wired together by native GitHub issue dependencies (`blocked by` / `blocking`) — no GitHub Projects. `/swarm` then walks the DAG: for each ready task, a **worker** agent branches from fresh main, implements, and pushes; a read-only **guard** agent reviews the branch against the issue's acceptance criteria and any referenced ADRs; the PR is squash-merged, auto-closing the issue. Issues carry the `hive:managed` label plus a cosmetic `phase:build` / `phase:review` flip.
+`/hive:comb` turns an approved plan into one **milestone per goal**, with an **Epic issue** and **Task sub-issues** wired together by native GitHub issue dependencies (`blocked by` / `blocking`) — no GitHub Projects. `/hive:swarm` then walks the DAG: for each ready task, a **worker** agent branches from fresh main, implements, and pushes; a read-only **guard** agent reviews the branch against the issue's acceptance criteria and any referenced ADRs; the PR is squash-merged, auto-closing the issue. Issues carry the `hive:managed` label plus a cosmetic `phase:build` / `phase:review` flip.
 
 ## Agents
 
@@ -47,24 +60,33 @@ Reviewers never write; verdict loops belong to the orchestrating command.
 ## Repository layout
 
 ```
-docs/
-  prd/         PRD-NNN   product requirements
-  research/    RES-NNN   research findings
-  adr/         ADR-NNNN  architecture decision records (MADR 4.0, append-only)
-  plans/       PLAN-NNN  plan.yaml audit trail
-  templates/   one template per artifact type
-.claude/
-  skills/      the /commands above + supporting skills
-  agents/      the agents above
-  rules/       colony.md — the full conventions
-CONTEXT.md     canonical glossary (lazily created by grilling sessions)
+.claude-plugin/
+  plugin.json       plugin manifest (name, version — authoritative)
+  marketplace.json  marketplace catalog entry
+skills/             the /hive:* commands above + supporting skills (each authoring skill carries its own Template)
+agents/             the agents above
+hooks/              SessionStart hook that injects the conventions
+rules/
+  colony.md         the full conventions
+docs/               output tree, populated in the repo Hive runs against
+  prd/ research/ adr/ plans/    PRD-NNN / RES-NNN / ADR-NNNN / PLAN-NNN
+CHANGELOG.md · LICENSE
+CONTEXT.md          canonical glossary (lazily created by grilling sessions)
 ```
 
 ## Conventions
 
-The full rules — naming, cross-linking, ID allocation, `gh` automation ground rules, branch/PR flow — live in [`.claude/rules/colony.md`](.claude/rules/colony.md) and are auto-loaded into every session. Highlights:
+The full rules — naming, cross-linking, ID allocation, `gh` automation ground rules, branch/PR flow — live in [`rules/colony.md`](rules/colony.md) and are injected into every session by the plugin's SessionStart hook. Highlights:
 
-- IDs are append-only and never reused; accepted ADRs are never edited, only superseded via `/waggle`.
-- Docs hold intent, issues hold execution state — status is synced between them only at `/comb` materialization and `/swarm` completion.
+- IDs are append-only and never reused; accepted ADRs are never edited, only superseded via `/hive:waggle`.
+- Docs hold intent, issues hold execution state — status is synced between them only at `/hive:comb` materialization and `/hive:swarm` completion.
 - All `gh` automation uses `--json` output; new issue/PR numbers are parsed strictly from the creation URL.
 - Requires GitHub CLI ≥ 2.94.0 with native issue types, sub-issues, and dependencies.
+
+## Versioning & releases
+
+Hive follows [Semantic Versioning](https://semver.org). The authoritative version is the `version` field in [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json); installed plugins update **only** when it is bumped (an unbumped commit is not delivered as an update). Each release:
+
+1. Bumps `version` in `plugin.json`.
+2. Adds a dated entry to [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog format).
+3. Is tagged `vX.Y.Z` on the release commit.
