@@ -19,13 +19,19 @@ owner/repo and default branch as literals (e.g. to build absolute
 `blob` URLs for issue-body links, per `hive:crosslinking`), resolve them once:
 
 ```bash
-gh repo view --json nameWithOwner,defaultBranchRef \
-  -q '.nameWithOwner + " " + .defaultBranchRef.name'
-# -> "<owner>/<repo> <default-branch>"
+repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+branch=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
+branch=${branch:-$(git symbolic-ref --short HEAD)}   # fall back to the local
+                                                     # branch before first push,
+                                                     # when GitHub has no default yet
+# -> $repo (<owner>/<repo>) and $branch (<default-branch>)
 ```
 
 Then form links as
-`https://github.com/<owner>/<repo>/blob/<default-branch>/<path>`.
+`https://github.com/<owner>/<repo>/blob/<default-branch>/<path>`. The
+`defaultBranchRef` fallback matters only on a brand-new repo with nothing pushed
+— by the time `/hive:comb` links to docs it has already pushed them, so the
+default branch resolves — but it keeps the URL well-formed either way.
 
 ## Milestones (REST API only — no native `gh milestone` command)
 

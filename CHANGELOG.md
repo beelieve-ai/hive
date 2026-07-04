@@ -31,7 +31,9 @@ plugin.
   `hive:<name>` `subagent_type` (a **bare** agent name does not resolve).
 - Cross-link and issue-body URLs are now built from the **current** repo via
   `gh repo view --json nameWithOwner,defaultBranchRef` instead of a hardcoded
-  `beelieve-ai/hive` — the plugin produces correct links in any repo.
+  `beelieve-ai/hive` — the plugin produces correct links in any repo. The
+  default-branch lookup falls back to the local branch on a brand-new repo with
+  nothing pushed yet, so the URL stays well-formed.
 
 ### Removed
 - `docs/templates/*` — the templates now live inside their owning skills.

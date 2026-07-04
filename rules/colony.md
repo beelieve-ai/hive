@@ -62,15 +62,16 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
   markdown link (e.g. `[ADR-0007](../adr/ADR-0007-slug.md)`).
 - **Issue → Doc**: always full absolute `blob` URLs so links resolve in the
   GitHub issue UI — no placeholders. Build them for the **current** repo,
-  never a hardcoded one: resolve `<owner>/<repo>` and the default branch once
-  via `gh repo view --json nameWithOwner,defaultBranchRef` (see
-  `hive:gh-conventions`), then form
+  never a hardcoded one: resolve `<owner>/<repo>` and the `<default-branch>`
+  once via `gh repo view --json nameWithOwner,defaultBranchRef` (see
+  `hive:gh-conventions` — fall back to the local branch when the remote default
+  is empty), then form
   `https://github.com/<owner>/<repo>/blob/<default-branch>/<path>`.
 - **Issue-body header block** — every generated issue body starts with (URLs
   built for the current repo as above):
 
   ```
-  **PRD:** [PRD-NNN](https://github.com/<owner>/<repo>/blob/<branch>/docs/prd/PRD-NNN-slug.md) · **Implements:** PRD-NNN-R1 · **ADR:** ADR-NNNN
+  **PRD:** [PRD-NNN](https://github.com/<owner>/<repo>/blob/<default-branch>/docs/prd/PRD-NNN-slug.md) · **Implements:** PRD-NNN-R1 · **ADR:** ADR-NNNN
   ```
 
   The `· **ADR:** ...` segment is omitted when no ADR constrains the task.

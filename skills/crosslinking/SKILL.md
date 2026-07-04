@@ -47,7 +47,7 @@ specific requirement with its anchor when useful:
 `https://github.com/<owner>/<repo>/blob/<default-branch>/docs/prd/PRD-NNN-slug.md#r1-title-slug`.
 
 (This is why `/hive:comb` materialization commits and pushes the docs **before**
-creating any issue — otherwise these `blob/<branch>/...` links 404.)
+creating any issue — otherwise these `blob/<default-branch>/...` links 404.)
 
 ## Issue header block (mandatory)
 

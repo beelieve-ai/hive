@@ -61,10 +61,10 @@ else.** Explicitly:
 1. **Load the `hive:grilling` and `hive:domain-modeling` skills now** (Skill
    tool) — they govern the entire session.
 2. Load the authoring skill matching the artifact type, so its quality bar
-   drives the questions: `writing-prds` for a PRD, `writing-adrs` for an
-   ADR (its ADR-worthiness test is needed either way — load it always),
-   `research-method` for a RES doc, `decomposition` for a plan. Load
-   `crosslinking` as well.
+   drives the questions: `hive:writing-prds` for a PRD, `hive:writing-adrs`
+   for an ADR (its ADR-worthiness test is needed either way — load it always),
+   `hive:research-method` for a RES doc, `hive:decomposition` for a plan. Load
+   `hive:crosslinking` as well.
 3. Read the target document in full. If root `CONTEXT.md` exists, read it
    and use only its canonical terms from the first question onward.
 4. Determine the artifact's **mutation class** from the table in step 6
