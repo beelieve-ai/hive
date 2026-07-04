@@ -119,7 +119,11 @@ lowercase, hyphenated, from the decision topic). Do **not** touch the PRD's
 
 For **each** ADR, one at a time: show the user the considered options with
 their honest pros/cons, the architect's recommendation, and the file path.
-Then ask for an explicit verdict. Possible outcomes:
+Then ask for the verdict with **AskUserQuestion** — one call per ADR, never
+batched: first option **"Accept <chosen option> (Recommended)"** with the
+architect's one-line justification in the description, then one option per
+considered alternative ("Accept <other option> instead"), then
+**"Reject / defer"**. Possible outcomes:
 
 - **Accept** — the user explicitly accepts the chosen option. Only then:
   1. Flip the ADR's frontmatter to `status: accepted`.

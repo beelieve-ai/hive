@@ -91,6 +91,14 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
 
 - **Human gates are mandatory**: PRD approval, ADR acceptance, plan approval
   before materialization. Never skip, never auto-accept.
+- **All user interaction goes through the `AskUserQuestion` tool** — every
+  question, gate verdict, and PAUSE resolution: one decision per call, the
+  recommended answer as the first option labelled `(Recommended)` with the
+  reason in its description, real alternatives as the other options, and the
+  tool's automatic "Other" as the escape hatch. Plain prose only for genuinely
+  open-ended asks (e.g. "what is the idea?"). Selecting an explicit
+  Approve/Accept option **is** the explicit human declaration the gates
+  require — silence or enthusiasm still is not.
 - **Reviewers are read-only** (no Write/Edit). Verdict loops belong to the
   orchestrator.
 - **Docs = intent, issues = execution state.** Never duplicate execution

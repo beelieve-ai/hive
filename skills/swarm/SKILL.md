@@ -28,10 +28,14 @@ Ground rules that bind every step:
 - All durable state lives in GitHub. /hive:swarm is **idempotent**: after an
   interruption or context compaction, re-running it resumes cleanly from
   the state map (Step 1) plus the per-issue resume-safety checks (Step 3.3).
-- Pauses are real: when a step says PAUSE, stop and ask the user — never
-  mark progress manually, never close issues to force the loop forward
-  (the sole exception is the two sanctioned `gh issue close` cases in
-  Steps 3.3 and 3.8, which reconcile GitHub with an already-merged state).
+- Pauses are real: when a step says PAUSE, stop and put the decision to the
+  user with **AskUserQuestion** — state the situation (PR URL, findings,
+  blocker), offer the concrete ways forward as options with your
+  recommendation first (`(Recommended)`, reason in the description), and let
+  "Other" catch what you didn't foresee. Never mark progress manually, never
+  close issues to force the loop forward (the sole exception is the two
+  sanctioned `gh issue close` cases in Steps 3.3 and 3.8, which reconcile
+  GitHub with an already-merged state).
 
 ## Step 0 — Resolve the milestone and check the gate
 

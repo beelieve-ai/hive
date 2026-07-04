@@ -25,10 +25,12 @@ interview yourself — no subagents are dispatched by this command.
 
 Run the interview exactly per the `grilling` skill. The load-bearing rules:
 
-- **One question at a time — never a form.** Ask a single question, wait for
+- **One question at a time — never a form.** Ask a single question via
+  **AskUserQuestion** (one question per call, per `hive:grilling`), wait for
   the answer, then ask the next.
-- **Every question ships a concrete recommended answer** with a one-line
-  reason, so the user can accept with a single word or push back.
+- **Every question ships a concrete recommended answer** — the first option,
+  labelled `(Recommended)`, with the reason in its description — so the user
+  can accept with a single click or push back.
 - **Walk the design tree branch by branch.** Pick a branch (scope, users,
   behavior, edge cases, constraints, …), drill until it is fully resolved,
   visibly close it, then move to the next. Never hop between half-resolved
@@ -108,10 +110,13 @@ Then push (`git push origin main`).
 1. Present the PRD to the user: path, one-line summary per requirement, and
    the Open Questions list. Point out that `/hive:forage PRD-NNN` answers the open
    questions next.
-2. Wait. The PRD moves to `approved` **only** when the user either edits the
-   frontmatter to `status: approved` themselves or explicitly declares
-   approval in conversation. Never flip it on your own initiative, never
-   infer approval from silence or from enthusiasm about the draft.
+2. Ask for the verdict with **AskUserQuestion** (one call, per the colony
+   ground rule): options **"Approve the PRD (Recommended)"** (description:
+   the shared-understanding gate passed; approval unlocks the rest of the
+   lifecycle), **"Request changes"**, and **"Leave as draft for now"**.
+   The PRD moves to `approved` **only** when the user selects Approve or
+   edits the frontmatter themselves. Never flip it on your own initiative,
+   never infer approval from silence or from enthusiasm about the draft.
 3. If the user requests changes: revise the draft (reopening grilling
    branches as needed, updating `CONTEXT.md` inline if terms shift), commit
    the revision, and present again. While `status: draft`, the document is

@@ -21,15 +21,44 @@ past the hard ones. A numbered list of questions is a form; never send one.
 ## Every question ships a recommended answer
 
 Each question comes with your concrete recommended answer and a one-line
-reason, so the user can accept it with a single word ("yes", "agreed") or
-push back. Never ask an open question when you can propose a defensible
-default:
+reason, so the user can accept it with a single click or push back. Never ask
+an open question when you can propose a defensible default. A question
+without a recommendation offloads the thinking onto the user; a
+recommendation with a question invites a decision.
 
-> Should a task's verification command run in CI or only locally? I recommend
-> locally only for now — there is no CI pipeline yet. OK?
+## Ask via the AskUserQuestion tool
 
-A question without a recommendation offloads the thinking onto the user;
-a recommendation with a question invites a decision.
+`AskUserQuestion` is the native surface for the grill: one question, a
+recommended answer to push against, and an automatic **"Other"** escape hatch
+for the branch you didn't foresee. **Exactly one question per call** — the
+tool allows up to four; don't. One at a time is the mechanic.
+
+- The **first option is your recommendation**, labelled `(Recommended)`, with
+  the *why* in its description.
+- Competing options state the real alternatives with their trade-off, not
+  strawmen.
+- Never rely on "Other" for an expected answer — if you can foresee the
+  branch, make it an option.
+
+```
+AskUserQuestion({
+  questions: [{
+    header: "Verification",
+    question: "Should a task's verification command run in CI or only locally?",
+    multiSelect: false,
+    options: [
+      { label: "Locally only (Recommended)",
+        description: "There is no CI pipeline yet — a CI-only command would make every task unverifiable today." },
+      { label: "CI",
+        description: "Deferred verification; requires setting up a pipeline first." }
+    ]
+  }]
+})
+```
+
+Where the answer space is genuinely open (e.g. "what is the idea, in one
+sentence?"), plain prose is fine — lean on the tool for every concrete
+decision, trade-off, and confirmation that makes up the body of the grill.
 
 ## Chase the decision tree branch by branch
 

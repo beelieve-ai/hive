@@ -148,9 +148,12 @@ its Context block), plus the milestone title and epic title. If resuming an
 interrupted materialization, also list what already exists (milestone,
 epic number, task issue numbers already recorded).
 
-Then **WAIT for explicit approval**. Do not materialize on anything less
-than a clear yes. If the user requests changes, send them to the planner
-as findings (Step 2.5 flow, fresh iteration counter) and re-run all three
+Then ask for the verdict with **AskUserQuestion** (one call): options
+**"Approve — materialize the plan"** (description: exactly what will be
+created — milestone, epic, N task issues), **"Request changes"**, and
+**"Decline"**. Do not materialize on anything less than an explicit Approve
+selection. If the user requests changes, send them to the planner as
+findings (Step 2.5 flow, fresh iteration counter) and re-run all three
 reviewers before returning to this gate. If the user declines, stop — the
 plan stays `status: reviewed`.
 

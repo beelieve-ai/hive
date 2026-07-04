@@ -98,10 +98,12 @@ Keep this as your private list of open branches, per `grilling`.
 
 Run it exactly per the `grilling` skill. The load-bearing rules:
 
-- **One question at a time — never a form.** Ask a single question, wait
+- **One question at a time — never a form.** Ask a single question via
+  **AskUserQuestion** (one question per call, per `hive:grilling`), wait
   for the answer, then ask the next.
-- **Every question ships a concrete recommended answer** with a one-line
-  reason, so the user can accept with a single word or push back.
+- **Every question ships a concrete recommended answer** — the first
+  option, labelled `(Recommended)`, with the reason in its description —
+  so the user can accept with a single click or push back.
 - **Walk the branches one at a time** — drill until a branch is fully
   resolved, visibly close it, then move on. Never hop between
   half-resolved branches.
@@ -120,9 +122,12 @@ When a branch resolves into a change to the target document:
 
 1. **Propose the concrete edit**: quote the current text and the exact
    replacement (or the addition and where it goes).
-2. **Wait for explicit agreement** — "yes", "agreed", or an equally
-   unambiguous acceptance of *that* edit. A counter-proposal reopens the
-   branch; agreement to the general idea is not agreement to the wording.
+2. **Get explicit agreement via AskUserQuestion** — one call per edit:
+   **"Apply this edit (Recommended)"** (why in the description),
+   **"Revise the wording"**, **"Skip it"**. Only an Apply selection is
+   agreement to *that* edit. A counter-proposal (via Other or Revise)
+   reopens the branch; agreement to the general idea is not agreement to
+   the wording.
 3. **Apply the edit immediately** after agreement (Edit tool), before
    moving to the next branch — never batch agreed edits for the end, so an
    interrupted session still leaves a consistent document.
