@@ -261,9 +261,10 @@ the plugin). It defines three presets — `quality`, `balanced`, `cheap` — eac
 per-role matrix (`architect`, `planner`, `guard`, `worker`, `scout`,
 `plan-reviewer`), with a top-level `active:` key selecting the live preset.
 
-- **Role key = agent name minus the `hive:` prefix.** The single
-  `plan-reviewer` key covers **all three** reviewer variants
-  (`plan-reviewer-context` / `-dag` / `-sizing`) — they are one class of work.
+- **Role key = agent name minus the `hive:` prefix, normalized**: any
+  `plan-reviewer-*` agent maps to the single `plan-reviewer` key before the
+  preset lookup (e.g. `hive:plan-reviewer-dag` → `plan-reviewer`) — the three
+  reviewer variants are one class of work.
 - **Orchestrator skills resolve and pass the model at spawn time.** Every Hive
   command that spawns agents (`/hive:forage`, `/hive:waggle`, `/hive:comb`,
   `/hive:swarm`) reads `models.yaml`, resolves `presets[active][role]`, and

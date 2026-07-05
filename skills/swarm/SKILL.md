@@ -123,8 +123,9 @@ its model from the Hive model config:
 4. `presets` = the project file's `presets:` block wholesale if present, else
    the plugin's.
 5. For each spawn: `model` = `presets[active][<role>]`, where `<role>` is the
-   agent name without the `hive:` prefix (the single `plan-reviewer` key
-   covers all three `hive:plan-reviewer-*` types). Missing preset or role
+   agent name without the `hive:` prefix, normalized so that any
+   `plan-reviewer-*` agent maps to the single `plan-reviewer` key (e.g.
+   `hive:plan-reviewer-dag` → `plan-reviewer`). Missing preset or role
    key → warn and omit `model` for that spawn.
 
 Pass the resolved model as the `model` parameter on the Agent call. Never
