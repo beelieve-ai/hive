@@ -6,6 +6,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.9.0] — 2026-07-05
+
+### Added
+- **Multi-phase PRDs**: a PRD may now branch into several milestones — one
+  `/hive:comb` run = one plan.yaml = one milestone = one phase. Phases are
+  tracked in a new append-only `milestones:` PRD frontmatter list
+  (`{plan, milestone, epic_issue, status}` per entry, normative schema in
+  `writing-prds`), which replaces the singular `milestone:`/`epic_issue:`
+  fields and is the authoritative PRD→milestone link. Legacy singular
+  frontmatter is read as a one-entry list and rewritten on the next
+  comb/swarm write.
+- **`/hive:swarm <PRD-id>` (PRD mode)**: swarm's primary argument is now a
+  PRD reference, consistent with the rest of the command surface. It
+  resolves the PRD's remaining milestones status-first (validating each
+  against GitHub, finishing interrupted closeouts, failing loudly on
+  frontmatter↔GitHub drift) and executes them **strictly sequentially in
+  phase order**. The milestone title-or-number invocation is kept unchanged
+  as the single-phase form, now with an out-of-order guard that warns when
+  an earlier phase is still open.
+- **`/hive:comb --new-phase`**: plans the next phase of a PRD whose phases
+  are all implemented (also offered interactively). Comb's resume logic is
+  now resume-first: non-materialized plans resume as before, a materialized
+  plan missing its `milestones:` entry is repaired/adopted (never
+  re-planned), and only a fully implemented PRD gets a new phase. Comb also
+  stamps a human-facing provenance mirror (`prd:`/`plan:` lines) into the
+  milestone description.
+- **Derived PRD status**: from `planned` onward the PRD `status:` summarizes
+  the `milestones:` list — `implemented` only when the list is non-empty and
+  every entry is implemented; `/hive:comb --new-phase` legally transitions
+  `implemented → planned`. New `milestone-implemented` audit event per phase
+  completion; `prd-implemented` now fires only when the PRD-level status
+  flips.
+
+### Changed
+- **`/hive:bumble`** iterates the `milestones:` list (one swarm run per open
+  entry, in phase order), no longer halts on multiple *materialized* plans
+  for one PRD, and its `--yolo` plan-approval provenance is a per-plan
+  snapshot at run entry (only plans drafted during the run are
+  auto-approvable) instead of the PRD-level "no plan.yaml existed" check.
+- Colony rules: "one milestone per goal" is now "one milestone per phase";
+  `pollinate`, `sting`, `gh-conventions`, and `crosslinking` updated for the
+  `milestones:` list schema.
+
 ## [0.8.0] — 2026-07-05
 
 ### Added

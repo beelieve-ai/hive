@@ -45,8 +45,9 @@ gh api repos/{owner}/{repo}/milestones -f title="<milestone title>"
 
 Capture **`.number`** from the POST response (e.g. append `--jq .number`).
 This is a **milestone number**, a separate numbering space from issue numbers —
-never confuse the two. The milestone number is what PRD frontmatter stores in
-`milestone:` and what every PATCH targets:
+never confuse the two. The milestone number is what the PRD frontmatter's
+`milestones:` entry stores in its `milestone:` field (schema in
+`hive:writing-prds`) and what every PATCH targets:
 
 ```bash
 gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH ...
@@ -55,8 +56,18 @@ gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH ...
 ### Update the description (read-modify-write — never blind-overwrite)
 
 Milestone descriptions accumulate marker lines (e.g. `plan-review: passed
-(PLAN-NNN)`). A blind PATCH with only the new text would destroy existing
-content. Always:
+(PLAN-NNN)`) and the **provenance mirror block** `/hive:comb` stamps at
+creation:
+
+```
+prd: PRD-NNN
+plan: PLAN-NNN
+```
+
+The mirror is human-facing provenance only — the authoritative
+PRD→milestone link is the PRD frontmatter's `milestones:` list, and nothing
+ever parses the mirror for scheduling. A blind PATCH with only the new text
+would destroy existing content. Always:
 
 1. GET the current description:
    `gh api repos/{owner}/{repo}/milestones/<number> --jq .description`

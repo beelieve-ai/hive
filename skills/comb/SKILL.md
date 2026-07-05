@@ -1,15 +1,18 @@
 ---
 name: comb
-description: "Turn an approved PRD into a reviewed plan.yaml and materialize it as a GitHub milestone with an epic and a task DAG. Invoke explicitly as /hive:comb <PRD-id> (e.g. /hive:comb PRD-003). Runs planner → three parallel plan reviewers → human approval gate → idempotent materialization."
+description: "Turn an approved PRD into a reviewed plan.yaml and materialize it as a GitHub milestone with an epic and a task DAG. Invoke explicitly as /hive:comb <PRD-id> [--new-phase] (e.g. /hive:comb PRD-003). One comb run = one plan = one milestone = one phase; --new-phase plans the next phase of a PRD whose phases are all implemented. Runs planner → three parallel plan reviewers → human approval gate → idempotent materialization."
 disable-model-invocation: true
 ---
 
 # /hive:comb — plan an approved PRD
 
-You are the orchestrator. `$ARGUMENTS` is the PRD id (e.g. `PRD-003`).
-You draft a plan via the planner agent, get it past three parallel
-reviewers, present it to the user for explicit approval, and only then
-materialize it into GitHub issues. Load the **`hive:gh-conventions`** skill for
+You are the orchestrator. `$ARGUMENTS` is the PRD id (e.g. `PRD-003`),
+optionally followed by `--new-phase`. You draft a plan via the planner
+agent, get it past three parallel reviewers, present it to the user for
+explicit approval, and only then materialize it into GitHub issues. **One
+comb run = one plan.yaml = one milestone = one phase**; a PRD phases into
+several milestones by being combed several times, tracked append-only in
+its `milestones:` frontmatter list (schema in `hive:writing-prds`). Load the **`hive:gh-conventions`** skill for
 the exact `gh` command syntax before running any `gh` command; the
 sequencing and gates below are load-bearing and stated inline.
 
@@ -28,16 +31,21 @@ Ground rules that bind every step:
 
 ## Step 0 — Resolve inputs and detect resume state
 
-1. Glob `docs/prd/$ARGUMENTS-*.md` — exactly one match, else abort with the
-   candidates found. Read its frontmatter. Require `status: approved` (if
-   `draft`, tell the user to approve the PRD first and stop). If
-   `status: planned`, this PRD was already materialized — but do **NOT**
-   stop yet: the PRD is flipped to `planned` in Step 4.5, *before* the
-   milestone marker (4.6) and the final commit+push (4.7) run, so a crash
-   in that window leaves `status: planned` with the run unfinished.
-   Continue to item 3 and run its `status: materialized` completion
-   verification; only report "already materialized" and stop after **both**
-   of its checks (marker present, write-backs pushed) confirm completion.
+1. Parse `$ARGUMENTS`: strip an optional `--new-phase` flag wherever it
+   appears (record it); the remaining token is the PRD id. Glob
+   `docs/prd/<PRD-id>-*.md` — exactly one match, else abort with the
+   candidates found. Read its frontmatter and route on `status:`:
+   - `draft` → tell the user to approve the PRD first and stop.
+   - `approved`, `planned`, or `implemented` → continue; item 3 decides
+     between resuming an open phase and starting a new one (`planned` and
+     `implemented` are derived from the `milestones:` list per
+     `hive:writing-prds` — neither is a stop by itself).
+
+   **Legacy frontmatter**: singular non-null `milestone:` / `epic_issue:`
+   fields are read as a one-entry `milestones:` list (its `plan:` resolved
+   from the item-3 grep; its `status:` mirrors the PRD status —
+   `implemented` if the PRD says `implemented`, else `planned`). Rewrite to
+   list form at the next frontmatter write (4.5).
 2. Collect ADR paths from two sources:
    - for each id in the PRD's `adrs:` frontmatter list, glob
      `docs/adr/<id>-*.md` and confirm the doc's `status: accepted`;
@@ -50,19 +58,28 @@ Ground rules that bind every step:
    1.2 — never edit a returned plan's `adrs:` yourself (that list is
    planner output, vetted by the reviewers). An empty combined list is
    valid — the whole flow works with zero ADRs (`adrs: []`).
-3. Resume check: grep `docs/plans/PLAN-*.yaml` for `prd: $ARGUMENTS`.
-   - No match → fresh run, continue with Step 1.
-   - Match with `status: draft` → resume at Step 2 (review loop).
-   - Match with `status: reviewed` → resume at Step 3 (gate). If any task
-     already has a non-null `issue:` or the milestone already exists, an
-     earlier materialization was interrupted — say so in the summary; the
-     gate still applies before continuing.
-   - Match with `status: materialized` → **verify the materialization
-     actually finished before stopping** (a failure between the status
-     write in 4.5 and the final steps 4.6/4.7 must be resumable, not
-     stranded):
-     - **Milestone marker present?** Resolve the milestone number (PRD
-       `milestone:` frontmatter, or lookup by the plan's
+3. Resume/phase check: grep `docs/plans/PLAN-*.yaml` for `prd: <PRD-id>`
+   (**multiple matches are legitimate** — one plan per phase) and read the
+   PRD's `milestones:` list. Decide in this order — first rule that
+   applies wins:
+   - **A plan with `status: draft` exists** → resume that phase at Step 2
+     (review loop). More than one non-materialized (`draft`/`reviewed`)
+     plan for one PRD → abort and report the candidates (phases are
+     planned one at a time; this state is corrupted).
+   - **A plan with `status: reviewed` exists** → resume that phase at
+     Step 3 (gate). If any task already has a non-null `issue:` or the
+     milestone already exists, an earlier materialization was interrupted
+     — say so in the summary; the gate still applies before continuing.
+   - **A `materialized` plan is missing from the `milestones:` list (no
+     entry with its plan id) or its completion is unverified** →
+     **repair/adopt, never re-plan**: verify the materialization actually
+     finished (a failure between the status write in 4.5 and the final
+     steps 4.6/4.7 must be resumable, not stranded):
+     - **`milestones:` entry present?** Missing → resume at Step 4.5
+       item 2 (append the entry; reconcile the milestone/epic numbers
+       from GitHub per Step 4.0's lookups), then 4.6, 4.7.
+     - **Milestone marker present?** Resolve the milestone number (the
+       plan's `milestones:` entry, or lookup by the plan's
        `milestone_title` per Step 4.0) and GET its description — it must
        contain `plan-review: passed (PLAN-NNN)`. Missing → resume at
        Step 4.6 (idempotent), then 4.7.
@@ -73,11 +90,23 @@ Ground rules that bind every step:
        `origin/main` (fetch, then confirm the files on `origin/main`
        carry the write-backs). Not committed or not pushed → resume at
        Step 4.7.
-     - Both complete → nothing to do; report the existing
-       milestone/epic/issue numbers and stop.
+     - All complete → nothing to repair; fall through to the next rule.
      The human gate is not re-required on this path: `status:
      materialized` can only have been written after approval, and steps
-     4.6/4.7 create no issues.
+     4.5 item 2 / 4.6 / 4.7 create no issues.
+   - **A `milestones:` entry has `status != implemented`** (its plan
+     cleanly materialized) → that phase awaits execution — report the
+     existing milestone/epic/issue numbers, point at
+     `/hive:swarm <PRD-id>`, and stop.
+   - **No plan matches at all** → fresh run (first phase), continue with
+     Step 1.
+   - **Every phase is implemented** → a new phase is a deliberate act:
+     with `--new-phase`, continue with Step 1; without it, ask via
+     **AskUserQuestion** whether to plan a new phase for this PRD
+     (decline → stop). The new phase allocates a new PLAN-NNN (Step 1)
+     and appends a new `milestones:` entry (4.5); the PRD legally
+     transitions `implemented → planned` per `hive:writing-prds` — the
+     approval gate is **not** re-run (it covers content, not phasing).
 
 ## Model preset resolution
 
@@ -247,8 +276,22 @@ If not found in 4.0, create it:
 `gh api repos/{owner}/{repo}/milestones -f title="<milestone_title>"`,
 capturing **`.number`** from the POST response (e.g. `--jq .number`).
 This is a **milestone number** — a numbering space separate from issue
-numbers. It is what the PRD's `milestone:` frontmatter stores and what
-every later PATCH targets; never confuse it with an issue number.
+numbers. It is what the PRD's `milestones:` entry stores in its
+`milestone:` field and what every later PATCH targets; never confuse it
+with an issue number.
+
+Then (created or reused) stamp the **provenance mirror** into the
+milestone description via read-modify-write per `hive:gh-conventions` —
+skip lines already present (resume case), never blind-PATCH:
+
+```
+prd: PRD-NNN
+plan: PLAN-NNN
+```
+
+The mirror is human-facing provenance for people browsing GitHub. The
+authoritative link is the PRD's `milestones:` list — nothing parses the
+mirror for scheduling.
 
 ### 4.2 Commit and push docs BEFORE creating any issues
 
@@ -342,10 +385,18 @@ created; re-running `/hive:comb $ARGUMENTS` resumes here without duplicates.
 After **all** tasks have issue numbers:
 
 1. plan.yaml: `status: materialized`.
-2. PRD frontmatter: `milestone: <milestone-number>` (the number from 4.1,
-   not an issue number), `epic_issue: <epic#>`, `status: planned`.
+2. PRD frontmatter: **append** the phase entry to the `milestones:` list —
+   `plan: PLAN-NNN`, `milestone: <milestone-number>` (the number from 4.1,
+   not an issue number), `epic_issue: <epic#>`, `status: planned` — and
+   set `status: planned`. The list is append-only: never overwrite or
+   reorder existing entries, and append only if the plan id is not yet
+   represented (the Step 0.3 repair/adopt path may re-enter here). If the
+   PRD still carries legacy singular `milestone:`/`epic_issue:` fields,
+   convert them to their list entry first, then delete the singular
+   fields.
 3. Append `plan-materialized` (subject: PLAN-NNN) and `prd-planned`
-   (subject: the PRD id) entries to the PRD's audit log.
+   (subject: the PRD id, detail: `plan: PLAN-NNN; milestone: <n>`) entries
+   to the PRD's audit log.
 
 Note: `status: materialized` alone does not mean the run finished —
 steps 4.6 and 4.7 still follow, and Step 0 item 3's materialized branch
@@ -401,4 +452,5 @@ Print: the plan id and path, review iterations used, milestone title and
 creation order, the glossary-gaps tracker state if step 4.8 touched it
 (issue number + unresolved terms, and that they are settled via
 `/hive:sting` or a grilling session), and the follow-up command:
-`/hive:swarm <milestone_title>`.
+`/hive:swarm <PRD-id>` (runs every remaining phase in order; pass the
+milestone title or number instead to run just this one).
