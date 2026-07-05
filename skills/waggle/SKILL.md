@@ -126,6 +126,29 @@ If **no** candidate passes, report that (with the recorded rationales),
 commit the PRD or `DECISIONS.md` edit per step 8, and stop — a run that
 writes zero ADRs is a valid outcome.
 
+## Model preset resolution
+
+Before spawning any agent below — including re-spawns and fix rounds — resolve
+its model from the Hive model config:
+
+1. Read `models.yaml` under the Hive plugin root (the `Hive plugin root:` path
+   injected at session start). Missing or unparseable → warn once, omit the
+   `model` param on all spawns (agent frontmatter defaults apply), and skip
+   the remaining steps.
+2. If `.hive/models.yaml` exists at the repo root, read it. Unparseable →
+   warn once and ignore it entirely; the plugin config still applies.
+3. `active` = the project file's `active:` if set, else the plugin's.
+4. `presets` = the project file's `presets:` block wholesale if present, else
+   the plugin's.
+5. For each spawn: `model` = `presets[active][<role>]`, where `<role>` is the
+   agent name without the `hive:` prefix (the single `plan-reviewer` key
+   covers all three `hive:plan-reviewer-*` types). Missing preset or role
+   key → warn and omit `model` for that spawn.
+
+Pass the resolved model as the `model` parameter on the Agent call. Never
+hard-fail the command over model config — a warning plus frontmatter fallback
+is always the correct degradation.
+
 ## 5. Allocate IDs and spawn architects
 
 Allocate one `ADR-NNNN` id per passing candidate **up front**: glob

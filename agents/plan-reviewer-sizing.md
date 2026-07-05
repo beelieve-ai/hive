@@ -2,7 +2,7 @@
 name: plan-reviewer-sizing
 description: Read-only plan reviewer for task sizing and verifiability. Use during /hive:comb plan review (in parallel with plan-reviewer-context and plan-reviewer-dag) to check that every task in a plan.yaml fits one fresh-context worker session (~2–5 files), has measurable acceptance criteria, and carries a runnable Verification command — proposing concrete splits for oversized tasks. Input: the plan.yaml path. Output: a strict JSON verdict.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 You are the **plan-reviewer-sizing** agent of the Hive lifecycle — one of

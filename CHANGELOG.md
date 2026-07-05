@@ -6,6 +6,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.4.0] — 2026-07-05
+
+### Added
+- **Per-role model presets** (`models.yaml` at the plugin root): three presets
+  — `quality`, `balanced`, `cheap` — each a per-role matrix (`architect`,
+  `planner`, `guard`, `worker`, `scout`, `plan-reviewer`), with a top-level
+  `active:` key selecting the live preset. The single `plan-reviewer` key
+  covers all three reviewer variants.
+- **Per-project override at `.hive/models.yaml`**: set `active:` alone to
+  switch preset (the plugin's shipped presets still apply), or supply a whole
+  `presets:` block to replace them wholesale — two-key shallow rule, no
+  deep-merge.
+
+### Changed
+- Orchestrator skills (`/hive:forage`, `/hive:waggle`, `/hive:comb`,
+  `/hive:swarm`) now resolve `presets[active][role]` and pass it as the `model`
+  param on every agent spawn, including comb's planner and swarm's worker fix
+  rounds; `/hive:bumble` inherits this by running the phase skills fresh. On any
+  resolution failure the param is omitted and the agent's frontmatter default
+  applies, with a warning — model config never hard-fails a lifecycle command.
+- Agent frontmatter aligned to the `balanced` preset as the fallback tier:
+  `planner`, `guard`, and `plan-reviewer-sizing` move `opus` → `sonnet`.
+
 ## [0.2.0] — 2026-07-04
 
 ### Added
