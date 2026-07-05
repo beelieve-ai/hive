@@ -107,7 +107,7 @@ this section defines what the document must contain.
   (each classified core / supporting / generic), and — where the decision
   spans contexts — their relationships in context-mapping vocabulary
   (shared kernel, customer–supplier, conformist, anticorruption layer,
-  open-host service, separate ways). A few sentences or bullets; this is
+  open-host service / published language, separate ways). A few sentences or bullets; this is
   decision-altitude analysis, not a modeling workshop.
 - **Derived fresh, intent first.** The domain picture is re-derived at
   drafting time from, in priority order: the PRD → accepted ADRs → root

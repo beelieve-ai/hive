@@ -217,8 +217,8 @@ a reminder, not work for the build loop, hence its deliberate exceptions:
   `type:*` label — the tracker is neither epic nor task.
 - **Milestone**: the PRD's milestone.
 - **Lookup before create** — across open AND closed issues:
-  `gh issue list --milestone "<title>" --state all --label glossary --json number,title,state`,
-  match the exact title. Multiple matches → abort and report.
+  `gh issue list --milestone "<milestone title>" --state all --label glossary --json number,title,state`,
+  match the exact issue title. Multiple matches → abort and report.
 - **Body**: one markdown checklist line per unresolved term —
   `- [ ] <Term> — <one-line why>`. On re-runs, **replace the body** with
   the current unresolved set and add one comment noting the delta (terms

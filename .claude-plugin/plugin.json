@@ -1,7 +1,7 @@
 {
   "name": "hive",
   "description": "AI-driven development lifecycle (Idea→PRD→Research→ADR→Plan→Build→Review) for Claude Code.",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "author": { "name": "Markus Heimbach" },
   "homepage": "https://github.com/beelieve-ai/hive",
   "repository": "https://github.com/beelieve-ai/hive",
