@@ -56,14 +56,35 @@ command(s)** whose failure means the task is not done:
 ```
 ## Verification
 - `pytest tests/test_ingest.py -q` — all tests pass
-- `python -m hive.ingest --dry-run sample.csv` — exits 0 and prints 3 rows
+- `python -m hive.ingest --dry-run sample.csv | grep -qx 'rows: 3'` — asserts the dry run reports exactly 3 rows
 ```
 
 - Commands must be executable by the worker from the repo root with no manual
   setup beyond what the task itself establishes.
-- "Code review looks good" or "file exists" alone is not verification — prefer
-  a test invocation or an observable behavior check. (A `test -f path` check
-  is acceptable only for pure file-creation tasks.)
+- Commands must be **self-asserting**: the assertion lives in the command
+  itself — a test runner, a `grep -q` pipe, a script that exits nonzero on
+  failure. The **exit code alone** decides pass/fail; a human (or agent)
+  reading output and judging it is not verification. Prose like "exits 0 and
+  prints 3 rows" fails review — encode the expectation
+  (`… | grep -qx 'rows: 3'`).
+- "Code review looks good", "check the UI looks right", or "file exists"
+  alone is not verification — anything needing eyes must be rewritten into an
+  automated check (assertion test, snapshot test, e2e script). There is no
+  manual-verification escape hatch. (A `test -f path` check is acceptable
+  only for pure file-creation tasks.)
+
+## Milestone verification (mandatory)
+
+Every plan carries a **plan-level** `milestone_verification.command` — the
+integration check `/hive:swarm` runs on `main` after **every** squash-merge.
+Per-task commands pass in isolation while the integrated milestone quietly
+breaks; this command is what keeps main green across the whole build loop.
+
+- Same rules as task verification: repo-root runnable, headless,
+  self-asserting, exit code decides.
+- Scope it to run after every merge: the full test suite when it's fast, a
+  smoke subset when it isn't — that scope is the planner's judgment, but it
+  must exist.
 
 ## DAG design
 
@@ -119,6 +140,8 @@ review: null            # set to "passed" by /hive:comb after all three reviewer
 reviewed_by: []
 reviewed_at: null
 milestone_title: ...
+milestone_verification:
+  command: ...           # self-asserting, repo-root runnable; /hive:swarm runs it on main after every merge
 epic:
   title: ...
   body: |

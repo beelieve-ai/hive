@@ -103,6 +103,7 @@ Ensure idempotently (`--force` updates instead of erroring on existing):
 gh label create hive:managed --force
 gh label create phase:build --force
 gh label create phase:review --force
+gh label create hive:parked --force
 # label mode only:
 gh label create type:epic --force
 gh label create type:task --force
@@ -217,6 +218,29 @@ branch and before any commit on main — no exceptions.
 
 ## Merge failures
 
-If `gh pr merge` fails (branch protection, required checks, conflicts):
-**PAUSE and surface the PR URL** to the user. Never mark the task as done,
-never close the issue manually, never bypass the failure.
+If `gh pr merge` fails: never mark the task as done, never close the issue
+manually, never bypass the failure. **Classify the blocker before reacting**:
+
+```bash
+gh pr view <pr#> --json state,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup
+```
+
+- **Agent-fixable** — `mergeable: CONFLICTING` (conflicts),
+  `mergeStateStatus: BEHIND` (stale base), or failed entries in
+  `statusCheckRollup` → eligible for `/hive:swarm`'s merge-blocker protocol
+  (merge-fix worker rounds).
+- **Pending** — rollup entries still queued/in progress → poll (~60s
+  interval, 10-minute budget) and re-classify once settled. An **empty**
+  rollup means no checks are configured — that is green, not pending.
+- **Structurally unresolvable** — `reviewDecision: REVIEW_REQUIRED` or
+  `CHANGES_REQUESTED` (a human approval gate), `mergeStateStatus: BLOCKED`
+  with green checks (a protection rule no agent can satisfy), permission
+  errors from `gh`, or a draft PR → escalate to the human immediately with
+  the PR URL and the classified reason.
+- **Unknown** — `mergeable: UNKNOWN` or API errors → re-poll once after a
+  short wait; still unknown → treat as structurally unresolvable.
+
+Failing-check logs for a worker briefing: GitHub Actions checks via
+`gh run view <run-id> --log-failed`; other checks → pass the details URL;
+no retrievable log → the worker re-runs the task's Verification command
+locally and diagnoses from that output.

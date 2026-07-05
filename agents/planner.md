@@ -40,6 +40,9 @@ Fill the fields as follows:
 - `status: draft`, `review: null`, `reviewed_by: []`, `reviewed_at: null` —
   review state belongs to the orchestrator, never pre-fill it.
 - `milestone_title:` — a short, stable title for the goal.
+- `milestone_verification:` — the plan-level `command:` per the
+  decomposition skill's **Milestone verification** section (self-asserting,
+  repo-root runnable, scoped to run after every merge). Never omit it.
 - `epic:` — title and body; the body starts with the mandatory issue header
   block per the `hive:crosslinking` skill (full
   `https://github.com/<owner>/<repo>/blob/<default-branch>/...` URLs built for
@@ -73,7 +76,8 @@ dag, sizing) check exactly those rules:
   `## Context` (concrete file paths — existing paths verified with Glob —
   conventions restated or linked, no "see previous task" references),
   `## Acceptance criteria` (measurable), and a mandatory `## Verification`
-  section with runnable command(s) whose failure means the task is not done.
+  section with runnable, **self-asserting** command(s) whose exit code alone
+  decides done — never a manual check, never prose the reader must judge.
 - **Sizing**: one task ≈ one fresh-context session ≈ 2–5 files touched;
   split oversized tasks along independently verifiable seams.
 

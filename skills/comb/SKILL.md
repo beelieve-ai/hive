@@ -117,7 +117,9 @@ is always the correct degradation.
 3. Extract that YAML block and write it to
    `docs/plans/PLAN-NNN-<slug>.yaml` (slug derived from the PRD slug or
    the plan's `milestone_title`). Sanity-check before proceeding:
-   `status: draft`, `review: null`, `prd:` matches `$ARGUMENTS`, every
+   `status: draft`, `review: null`, `prd:` matches `$ARGUMENTS`, a
+   non-empty `milestone_verification.command` is present (the sizing
+   reviewer additionally judges its quality), every
    task has `issue: null`, and every task body starts with the
    crosslinking header block (`**PRD:** ...` with full
    `https://github.com/<owner>/<repo>/blob/<default-branch>/...` URLs built
@@ -225,7 +227,8 @@ already exists on GitHub and reuse/skip it.
    in the summary**. `User` → label mode (`type:epic` / `type:task`
    labels, no `--type`). Then **ensure all labels exist** idempotently:
    `gh label create <name> --force` for `hive:managed`, `phase:build`,
-   `phase:review`, and — label mode only — `type:epic`, `type:task`.
+   `phase:review`, `hive:parked`, and — label mode only — `type:epic`,
+   `type:task`.
 1. **Milestone lookup by title**: per gh-conventions,
    `gh api "repos/{owner}/{repo}/milestones?state=all" --paginate` and
    match the plan's `milestone_title` exactly against `.title`. Exactly

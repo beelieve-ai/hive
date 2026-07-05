@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Work an already-materialized milestone to completion — dependency-ordered task execution with worker/guard loops, squash-merged PRs, and epic/milestone closing. Invoke explicitly as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3). Refuses to start unless the milestone description contains the plan-review: passed marker."
+description: "Work an already-materialized milestone to completion — dependency-ordered task execution with worker/guard loops, agentic merge-blocker resolution (parking unresolvable PRs under hive:parked instead of halting), squash-merged PRs, post-merge milestone verification, and epic/milestone closing. Invoke explicitly as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3). Refuses to start unless the milestone description contains the plan-review: passed marker."
 disable-model-invocation: true
 ---
 
@@ -60,6 +60,17 @@ Ground rules that bind every step:
    `milestone: <milestone-number>`. Exactly one match is expected —
    record its path (needed for the Step 5 status sync). On zero or
    multiple matches, report the anomaly and stop.
+4. **Resolve the milestone verification command**: capture the `PLAN-NNN`
+   id from the marker line (`plan-review: passed (PLAN-NNN)`), glob
+   `docs/plans/PLAN-NNN-*.yaml`, and read its
+   `milestone_verification.command`. The glob must match **exactly one**
+   file. Record the command. An older marker without a plan id, a missing
+   plan file, multiple matching plan files (ambiguous — never guess which
+   command to run), or a plan without the field →
+   **no milestone verification for this run** (note it, and the reason, in
+   the final report) — never fail the run over it.
+5. **Ensure the parked label exists** (legacy milestones were materialized
+   before it): `gh label create hive:parked --force`.
 
 ## Step 1 — Build the state map and discover the epic
 
@@ -96,17 +107,26 @@ Ground rules that bind every step:
 ## Step 2 — Ready set and selection
 
 1. **Ready set** = open tasks whose `blockedBy` entries are **all closed**,
-   resolved from the same state map. A `blockedBy` entry that does not
-   appear in the map counts as an external blocker — that task is not
-   ready. (Residual risk, accepted per colony rules: a closed-but-unmerged
-   blocker is trusted as done.)
-2. If the ready set is **empty but open tasks remain** → report the
-   blockage precisely (which open tasks are blocked by what — likely a
-   dependency cycle or an external blocker) and **STOP**.
-3. If open tasks remain, pick **unblocking-most-first**: the ready task
+   resolved from the same state map, **excluding tasks labeled
+   `hive:parked`**. A `blockedBy` entry that does not appear in the map
+   counts as an external blocker — that task is not ready. (Residual risk,
+   accepted per colony rules: a closed-but-unmerged blocker is trusted as
+   done.) Parked exclusion is the single gate that keeps a parked task's
+   open PR from ever being auto-merged on resume — unparking is a human
+   act: resolve and remove the label (or merge the PR) and re-run
+   /hive:swarm.
+2. **Red-main override**: if milestone verification is currently red
+   (Step 3.9a), the only selectable task is its open synthetic fix task —
+   nothing else is worked or merged until main is green again.
+3. If the ready set is **empty but open tasks remain** → this is the run's
+   human gate. Report precisely: every `hive:parked` task with its PR URL
+   and park reason, and every other open task with what blocks it (a
+   parked dependency, a dependency cycle, an external blocker). Then
+   **STOP**.
+4. If open tasks remain, pick **unblocking-most-first**: the ready task
    with the highest `blocking` count (most other issues name it in their
    `blockedBy`). Tie-break by lowest issue number for determinism.
-4. If **no open tasks remain**, go to Step 5 (termination).
+5. If **no open tasks remain**, go to Step 5 (termination).
 
 ## Model preset resolution
 
@@ -241,9 +261,52 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    its explicit number, never rely on branch context (on resume you may be
    on `main` with no local issue branch). Auto-closes the issue via the
    `Closes #<n>` body.
-3. If the merge **fails** (branch protection, required checks, conflicts):
-   **PAUSE with the PR URL** — never mark progress manually, never close
-   the issue yourself, never bypass the failure.
+3. If the merge **fails**: run the merge-blocker protocol (3.7a) — never
+   mark progress manually, never close the issue yourself, never bypass
+   the failure. Only park (3.7b) after the protocol is exhausted.
+
+### 3.7a Merge-blocker protocol (max 2 fix attempts)
+
+1. **Classify** per the gh-conventions `Merge failures` section
+   (`gh pr view <pr#> --json state,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup`):
+   - *Pending checks* → poll (~60s interval, 10-minute budget), then
+     re-classify. Not settled within budget → park with reason "checks did
+     not settle". An empty rollup is green, not pending.
+   - *Structurally unresolvable* (approval required, protection rule with
+     green checks, permission error, draft) or *unknown after one re-poll*
+     → park immediately — worker rounds cannot fix policy.
+   - *Agent-fixable* (conflicts, stale base, failed checks) → continue.
+2. **Collect failure context** for the briefing: for failed GitHub Actions
+   checks, `gh run view <run-id> --log-failed`; for other checks, the
+   details URL; if no log is retrievable, tell the worker to re-run the
+   task's Verification command and diagnose from that. (Passing logs
+   through verbatim is not "reading diffs" — implementation detail still
+   stays in the worker's context.)
+3. **Merge-fix round**: spawn the **worker** on the same branch in
+   merge-fix mode with: the issue number, the exact branch name, the
+   classification, and the failure context. It rebases onto `origin/main`,
+   resolves conflicts, fixes the failing checks, re-verifies, and pushes
+   with `--force-with-lease`.
+4. **Fast-forward local main** (`git switch main && git pull --ff-only
+   origin main`) — the rebase absorbed new main-side commits, and guard's
+   `git diff main...HEAD` against a stale local main would pollute the
+   review with changes already merged.
+5. **Guard always re-reviews**: run the full 3.6 guard review loop on the
+   rebased branch (same inputs, same max 2 fix rounds). If that loop ends
+   unresolved, park (3.7b) instead of pausing.
+6. **Retry the merge** (3.7 item 2). If it fails again, re-enter this
+   protocol; after **2 merge-fix attempts** for this PR (regardless of
+   whether the second blocker is new), park.
+
+### 3.7b Park the task (the human gate, without halting the swarm)
+
+1. `gh issue edit <n> --add-label hive:parked`.
+2. Comment the PR with the gate summary:
+   `gh pr comment <pr#> --body "hive:parked — <classification>; attempted: <what each fix round did>; blocked because: <why it still fails>"`.
+3. Record `issue# → parked (<reason>, <PR URL>)` in your running table.
+4. **Return to Step 4** — the swarm continues with independent tasks;
+   dependents of the parked issue stay blocked naturally via `blockedBy`,
+   and Step 2 excludes parked tasks from selection. Do not pause.
 
 ### 3.8 Verify the issue actually closed
 
@@ -255,6 +318,36 @@ termination invariant (Step 5 fires only when every task is closed).
 
 `git switch main && git pull --ff-only origin main` — mandatory after
 every squash-merge, before anything else happens.
+
+### 3.9a Milestone verification (when Step 0.4 recorded a command)
+
+Run the recorded `milestone_verification.command` from the repo root on the
+freshly synced main. Its exit code is the whole verdict — never interpret
+output.
+
+- **Green** → continue with 3.10.
+- **Red** → main is broken; fix forward, never revert, never rewrite
+  history:
+  1. Create a **synthetic fix task issue** with the exact conventions comb
+     uses at materialization (gh-conventions `Create a task`): assigned to
+     the milestone, `--parent <epic#>`, labels `phase:build,hive:managed`
+     plus the mode's task type, **no `--blocked-by`**. Title:
+     `fix: milestone verification failure after #<n>`. Body: the
+     crosslinking header block (**PRD:** the Step 0.3 PRD ·
+     **Implements:** the requirement id(s) from `#<n>`'s own header block —
+     the fix restores their verified state · **ADR:** —), `## Context` with the
+     failing command, its output, and the merge that preceded it
+     (issue `#<n>`, PR `#<pr#>`), `## Acceptance criteria` — the milestone
+     verification command passes on main — and `## Verification` — that
+     same command. Capture and verify the number per gh-conventions.
+  2. Post the 3.10 progress comment for `#<n>` first (it did merge), then
+     return to Step 4. The Step 2 red-main override makes this fix task
+     the only selectable work; it flows through the normal
+     worker → guard → PR → merge → 3.9a path.
+  3. If milestone verification is **still red after 2 synthetic fix tasks**
+     for the same incident, **PAUSE** — main is broken and nothing else
+     may merge, so this gate halts the run: present the failure output and
+     both fix attempts to the user.
 
 ### 3.10 Progress comment on the epic
 
@@ -295,7 +388,11 @@ Execute in exactly this order:
 6. **Final report** to the user: the milestone and epic that were closed,
    the running table of `issue# → 1-line summary` (every task, including
    any recovered/skipped ones), any non-`hive:managed` issues that were
-   ignored, and the PRD now marked `status: implemented`.
+   ignored, whether milestone verification ran (and "legacy plan — no
+   milestone verification" when Step 0.4 found none), and the PRD now
+   marked `status: implemented`. (A run that ends at Step 2.3 instead —
+   parked tasks remaining — reports the same table plus every parked PR
+   with URL and reason; that report is the human gate.)
 
 ## Context discipline (binding throughout)
 
