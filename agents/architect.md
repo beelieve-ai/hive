@@ -46,9 +46,11 @@ research-method's output machinery (the Evidence ledger, the RES template,
 - Tag every web-sourced material claim **inline, where it is used** in
   option prose, in exactly this format — uppercase tag and confidence,
   source as a file path, ADR id, or specific URL:
-  `[VERIFIED: <source>, confidence: HIGH]` ·
-  `[CITED: <url>, confidence: MEDIUM]` ·
-  `[ASSUMED, confidence: LOW]`
+  `[VERIFIED: <source>, confidence: <RATING>]` ·
+  `[CITED: <url>, confidence: <RATING>]` ·
+  `[ASSUMED, confidence: LOW]` — `<RATING>` is `HIGH`, `MEDIUM`, or `LOW`:
+  the claim's **actual** rating, at or below its tag's ceiling (a
+  single-source CITED claim is LOW; downgrade freely, never upgrade).
 - End the ADR body with an `## Assumptions` section: one bullet per
   `[ASSUMED]` claim, each with what would verify it. Write `None.` when
   there are none — the section is always present.

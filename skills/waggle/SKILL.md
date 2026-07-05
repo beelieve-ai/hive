@@ -196,10 +196,12 @@ For each returned draft, before writing:
   broken ADR).
 - Verify **provenance**: every web-sourced claim in option prose carries an
   inline tag + confidence in the pinned format
-  (`[VERIFIED: <source>, confidence: HIGH]` /
-  `[CITED: <url>, confidence: MEDIUM]` / `[ASSUMED, confidence: LOW]`), the
+  (`[VERIFIED: <source>, confidence: <RATING>]` /
+  `[CITED: <url>, confidence: <RATING>]` / `[ASSUMED, confidence: LOW]`,
+  where `<RATING>` is `HIGH`/`MEDIUM`/`LOW` at or below the tag's
+  `research-method` ceiling), the
   `## Assumptions` section is present (`None.` is valid), and every inline
-  `[ASSUMED…]` claim has a matching Assumptions bullet. Gaps are handled
+  `[ASSUMED]` claim has a matching Assumptions bullet. Gaps are handled
   exactly like structural incompleteness above: one re-invoke with the gap
   named, then report-and-drop.
 
