@@ -63,10 +63,12 @@ Ground rules that bind every step:
 4. **Resolve the milestone verification command**: capture the `PLAN-NNN`
    id from the marker line (`plan-review: passed (PLAN-NNN)`), glob
    `docs/plans/PLAN-NNN-*.yaml`, and read its
-   `milestone_verification.command`. Record the command. An older marker
-   without a plan id, a missing plan file, or a plan without the field →
-   **no milestone verification for this run** (legacy plan; note it in the
-   final report) — never fail the run over it.
+   `milestone_verification.command`. The glob must match **exactly one**
+   file. Record the command. An older marker without a plan id, a missing
+   plan file, multiple matching plan files (ambiguous — never guess which
+   command to run), or a plan without the field →
+   **no milestone verification for this run** (note it, and the reason, in
+   the final report) — never fail the run over it.
 5. **Ensure the parked label exists** (legacy milestones were materialized
    before it): `gh label create hive:parked --force`.
 
@@ -332,7 +334,8 @@ output.
      plus the mode's task type, **no `--blocked-by`**. Title:
      `fix: milestone verification failure after #<n>`. Body: the
      crosslinking header block (**PRD:** the Step 0.3 PRD ·
-     **Implements:** the PRD id · **ADR:** —), `## Context` with the
+     **Implements:** the requirement id(s) from `#<n>`'s own header block —
+     the fix restores their verified state · **ADR:** —), `## Context` with the
      failing command, its output, and the merge that preceded it
      (issue `#<n>`, PR `#<pr#>`), `## Acceptance criteria` — the milestone
      verification command passes on main — and `## Verification` — that
