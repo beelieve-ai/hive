@@ -51,7 +51,10 @@ Ground rules that bind every step:
 ## Step 0 — Resolve the argument to a milestone queue
 
 **Mode detection**: `$ARGUMENTS` matching `PRD-\d+` (case-insensitive,
-whole token) → **PRD mode**. Anything else → **single-milestone mode**
+whole token) → **PRD mode**; normalize it to the canonical `<PRD-id>`
+first — uppercase `PRD`, number zero-padded to three digits (`prd-3` →
+`PRD-003`) — and use that normalized id for every lookup below (globs are
+case- and padding-sensitive). Anything else → **single-milestone mode**
 (title or number — the full legacy surface, and the "run just this one
 phase" override).
 
@@ -64,10 +67,10 @@ PRD status) and rewritten to list form at the Step 5 write-back.
 
 ### PRD mode
 
-1. Glob `docs/prd/$ARGUMENTS-*.md` — exactly one match, else abort with
-   the candidates found. Read its `milestones:` list. Empty (and no legacy
-   fields) → error: nothing is materialized for this PRD; run
-   `/hive:comb $ARGUMENTS` first.
+1. Glob `docs/prd/<PRD-id>-*.md` (the normalized id) — exactly one match,
+   else abort with the candidates found. Read its `milestones:` list.
+   Empty (and no legacy fields) → error: nothing is materialized for this
+   PRD; run `/hive:comb <PRD-id>` first.
 2. **Candidate selection is status-first**: take every entry with
    `status != implemented`, **in list order** (list order = phase order =
    execution order). For each, validate against GitHub (milestone lookup
@@ -82,11 +85,18 @@ PRD status) and rewritten to list form at the Step 5 write-back.
      loudly** with what disagrees, and stop. Never guess, never
      auto-repair drift.
 3. Zero candidates → every phase is implemented: report the PRD as
-   complete (if the PRD `status:` is somehow not yet `implemented`, finish
-   the Step 5 PRD-level write-back) and stop.
+   complete and stop. If the PRD `status:` is somehow not yet
+   `implemented`, reconcile the doc first — sync main, derive the status
+   per `hive:writing-prds` (here: all entries implemented → set
+   `status: implemented`), append the `prd-implemented` audit entry
+   (subject: the PRD id, detail: `plans: <every PLAN-NNN in the list>`) if
+   not already recorded, and commit+push per Step 5 item 3 — no milestone
+   steps run on this path.
 4. Work the queue **strictly sequentially in list order**: for each
-   milestone, run the Step 0.5 gate, then Steps 1–5. Only after Step 5
-   closes one milestone does the next enter Step 0.5.
+   milestone queued for execution, run Step 0.5, then Steps 1–5; an
+   **interrupted-closeout** entry (queued for Step 5 only) skips straight
+   to Step 5 — no gate, no work loop. Only after Step 5 finishes one
+   milestone does the next enter the queue's front.
 
 ### Single-milestone mode
 
@@ -453,7 +463,8 @@ Runs once per milestone in the queue. Execute in exactly this order:
 5. **Close the milestone**:
    `gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH -f state=closed`.
 6. **Advance the queue** (PRD mode): if candidates remain, proceed to the
-   next milestone in list order (Step 0.5, then Step 1). Otherwise — and
+   next milestone in list order per Step 0 item 4 (Step 0.5 then Step 1,
+   or straight to Step 5 for an interrupted closeout). Otherwise — and
    always in single-milestone mode — final report.
 
 ## Final report
