@@ -13,7 +13,7 @@ They are the source of truth that `/hive:forage`, `/hive:waggle`, and `/hive:com
 ## Structure
 
 Frontmatter per the template (`id`, `title`, `status`, `created`, `research`,
-`adrs`, `milestone`, `epic_issue`). Body sections, in order:
+`adrs`, `milestones`). Body sections, in order:
 
 1. **Problem** — who hurts, why, and why now. No solutions here.
 2. **Goals / Non-Goals** — goals are outcomes, not features. Non-goals are
@@ -83,20 +83,52 @@ Split into separate PRDs when any of these hold:
 When splitting, cross-reference the sibling PRDs by ID and repo-relative
 link in each Problem section.
 
+## Phases (`milestones:` frontmatter)
+
+A PRD may ship in **phases**: one `/hive:comb` run = one plan.yaml = one
+GitHub milestone = one entry in the PRD's `milestones:` frontmatter list.
+The list is the **authoritative** PRD→milestone link (docs are the source of
+truth) and is **append-only; list order = phase order = execution order**:
+
+```yaml
+milestones:
+  - plan: PLAN-007      # the phase's plan.yaml id
+    milestone: 3        # GH milestone number (not an issue number)
+    epic_issue: 42      # GH issue number of the phase's epic
+    status: planned     # planned | implemented
+```
+
+Entries are written only by `/hive:comb` (appended at materialization,
+`status: planned`) and `/hive:swarm` (flipped to `implemented` at milestone
+completion). Two entry statuses only — swarm's liveness is observable from
+GitHub issue state, so there is no `in-progress`.
+
+**Legacy form**: a PRD with the old singular `milestone:` / `epic_issue:`
+fields is read as a one-entry list and rewritten to list form by the next
+comb/swarm write — never hand-migrate.
+
 ## Status lifecycle
 
-`draft → approved → planned → implemented`, strictly forward:
+`draft → approved → planned → implemented`. From `planned` onward the PRD
+`status:` is a **derived summary** of the `milestones:` list:
 
 - **draft** — set at creation by `/hive:pollinate`. Freely editable.
 - **approved** — set **only by the human** (edits the frontmatter or says
   so explicitly). This is a mandatory gate: `/hive:forage`, `/hive:waggle`, and
   `/hive:comb` build on the PRD's content, and nothing may be auto-approved on
   the human's behalf. Post-approval sharpening (e.g. via `/hive:sting`) never
-  resets this gate.
-- **planned** — set by `/hive:comb` at materialization, together with the
-  `milestone` and `epic_issue` frontmatter fields.
-- **implemented** — set by `/hive:swarm` when every task issue in the milestone
-  is closed.
+  resets this gate. `draft` and `approved` are human/doc states — they hold
+  while the `milestones:` list is empty.
+- **planned** — set by `/hive:comb` at materialization, when at least one
+  `milestones:` entry is `planned`.
+- **implemented** — set by `/hive:swarm` only when the `milestones:` list is
+  **non-empty and every entry** is `implemented` (an empty list is never
+  vacuously implemented).
+
+One sanctioned loop: appending a new phase via `/hive:comb --new-phase`
+legally transitions an `implemented` PRD back to `planned`. The approval
+gate is never re-run by this loop — approval covers the PRD's content, not
+its phasing.
 
 ## Template
 
@@ -111,8 +143,8 @@ status: draft | approved | planned | implemented
 created: YYYY-MM-DD
 research: []          # RES-NNN ids
 adrs: []              # ADR-NNNN ids informed by this PRD
-milestone: null       # GH milestone number, set by /hive:comb
-epic_issue: null      # GH issue number of the epic, set by /hive:comb
+milestones: []        # append-only phase list, entries appended by /hive:comb
+                      # ({plan, milestone, epic_issue, status} — see Phases)
 ---
 
 # PRD-NNN: <title>

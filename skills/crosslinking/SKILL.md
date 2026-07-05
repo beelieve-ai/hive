@@ -80,12 +80,19 @@ block, before any other content:
 
 Execution state flows back into documents **only** at the defined sync points:
 
-- At `/hive:comb` materialization, the PRD frontmatter gets `milestone:` (the GitHub
-  **milestone number**, captured from the milestone-create API response — not
-  an issue number) and `epic_issue:` (the epic's issue number), and PRD
-  `status:` becomes `planned`. Each plan task gets its `issue:` number written
-  back into `plan.yaml` immediately after creation.
-- At `/hive:swarm` completion, PRD `status:` becomes `implemented`.
+- At `/hive:comb` materialization, the PRD frontmatter's `milestones:` list
+  (schema in `hive:writing-prds`) gets a new entry appended — `plan:
+  PLAN-NNN`, `milestone:` (the GitHub **milestone number**, captured from the
+  milestone-create API response — not an issue number), `epic_issue:` (the
+  epic's issue number), `status: planned` — and PRD `status:` becomes
+  `planned`. Each plan task gets its `issue:` number written back into
+  `plan.yaml` immediately after creation.
+- At `/hive:swarm` milestone completion, that phase's `milestones:` entry
+  flips to `status: implemented`; PRD `status:` becomes `implemented` only
+  when every entry is (the derived-status rule in `hive:writing-prds`).
+
+Legacy singular `milestone:` / `epic_issue:` frontmatter is read as a
+one-entry list and rewritten to list form at the next sync-point write.
 
 Never mirror per-task progress, PR state, or labels into documents anywhere
 else.

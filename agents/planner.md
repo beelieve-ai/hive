@@ -39,7 +39,7 @@ Fill the fields as follows:
   a plan with zero ADRs is valid).
 - `status: draft`, `review: null`, `reviewed_by: []`, `reviewed_at: null` —
   review state belongs to the orchestrator, never pre-fill it.
-- `milestone_title:` — a short, stable title for the goal.
+- `milestone_title:` — a short, stable title for this phase's milestone.
 - `milestone_verification:` — the plan-level `command:` per the
   decomposition skill's **Milestone verification** section (self-asserting,
   repo-root runnable, scoped to run after every merge). Never omit it.

@@ -28,8 +28,8 @@ Idea → PRD → Research → ADR → Plan → Build → Review
 | Idea → PRD | `/hive:pollinate <idea>` | `docs/prd/PRD-NNN-slug.md` via a one-question-at-a-time grilling interview | PRD approval |
 | Research | `/hive:forage <PRD-id>` | `docs/research/RES-NNN-*.md` — scout agents answer the PRD's open questions in parallel | all research docs `status: answered` |
 | ADR | `/hive:waggle <PRD-id> [topic]` | `docs/adr/ADR-NNNN-*.md` (MADR 4.0) — one architect agent per worthy decision + root `ARCHITECTURE.md` bedrock digest | ADR acceptance |
-| Plan | `/hive:comb <PRD-id>` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG | plan approval before materialization |
-| Build + Review | `/hive:swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged; merge blockers are auto-resolved (worker merge-fix rounds + guard re-review), main re-verified after every merge via the plan's milestone verification | unresolvable merge blockers park under `hive:parked` with the PR URL |
+| Plan | `/hive:comb <PRD-id> [--new-phase]` | `docs/plans/` plan.yaml, reviewed by three parallel plan reviewers, then materialized as a GitHub milestone + epic + task DAG — one milestone per phase; `--new-phase` plans the next phase of a fully implemented PRD | plan approval before materialization |
+| Build + Review | `/hive:swarm <PRD-id \| milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged; merge blockers are auto-resolved (worker merge-fix rounds + guard re-review), main re-verified after every merge via the plan's milestone verification. A PRD id works every remaining milestone strictly in phase order; a milestone title/number runs just that one | unresolvable merge blockers park under `hive:parked` with the PR URL |
 | Autopilot | `/hive:bumble <PRD-id> [--yolo]` | Cascades Research → ADR → Plan → Build for one approved PRD, deriving the current phase from the artifacts; resumable by re-running | all phase gates inline; `--yolo` delegates the three approval gate types for artifacts created in the run |
 | Anytime | `/hive:sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
 | Feedback | `/hive:tremble [--all]` | Mines this project's own session transcripts + audit logs for friction the hive itself caused, then drafts sanitized issues in `beelieve-ai/hive` — `tremble-analyzer` agents analyze each session in parallel | per-issue approval before filing |
@@ -41,7 +41,7 @@ A typical end-to-end run:
 /hive:forage PRD-001                                   # scouts answer open questions
 /hive:waggle PRD-001                                   # decide architecture → accept ADRs
 /hive:comb PRD-001                                     # plan → review → approve → issues created
-/hive:swarm 1                                          # build the milestone to completion
+/hive:swarm PRD-001                                    # build every remaining milestone to completion
 
 # or, after approving the PRD, autopilot the rest:
 /hive:bumble PRD-001
@@ -49,7 +49,7 @@ A typical end-to-end run:
 
 ## How execution works
 
-`/hive:comb` turns an approved plan into one **milestone per goal**, with an **Epic issue** and **Task sub-issues** wired together by native GitHub issue dependencies (`blocked by` / `blocking`) — no GitHub Projects. `/hive:swarm` then walks the DAG: for each ready task, a **worker** agent branches from fresh main, implements, and pushes; a read-only **guard** agent reviews the branch against the issue's acceptance criteria and any referenced ADRs; the PR is squash-merged, auto-closing the issue. Issues carry the `hive:managed` label plus a cosmetic `phase:build` / `phase:review` flip.
+`/hive:comb` turns an approved PRD into one **milestone per phase** (one comb run = one plan = one milestone; a PRD may phase into several milestones, tracked in its `milestones:` frontmatter list), with an **Epic issue** and **Task sub-issues** wired together by native GitHub issue dependencies (`blocked by` / `blocking`) — no GitHub Projects. `/hive:swarm` then walks each milestone's DAG, milestones strictly in phase order: for each ready task, a **worker** agent branches from fresh main, implements, and pushes; a read-only **guard** agent reviews the branch against the issue's acceptance criteria and any referenced ADRs; the PR is squash-merged, auto-closing the issue. Issues carry the `hive:managed` label plus a cosmetic `phase:build` / `phase:review` flip.
 
 **Autopilot.** `/hive:bumble <PRD-id>` reads the lifecycle state straight from the docs and the milestone marker, then runs Research → ADR → Plan → Build in order — each phase no-ops when it has nothing to do. It pauses at every human gate inline and, on any failure, halts with a resume instruction. There is no state file: re-running `/hive:bumble` simply resumes from the artifacts on disk. Add `--yolo` to delegate the three approval gate types (ADR acceptance, plan approval, and research-assumption acceptance) for artifacts created during that run.
 
