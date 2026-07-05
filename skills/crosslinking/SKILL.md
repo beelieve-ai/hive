@@ -22,6 +22,12 @@ alone in body prose, and never link by path alone without the ID visible.
 Frontmatter fields (`research:`, `adrs:`, `prd:`, `informed-by:`,
 `derived-from:`, `supersedes:`) carry bare IDs only — no links in YAML.
 
+Audit-log entries (`docs/audit/`) follow the same spirit: every doc-artifact
+ID in a new entry is a relative link to the artifact file, resolved by
+globbing the artifact directory, falling back to the bare ID when the glob
+matches zero or multiple files. The normative rule (token boundaries,
+dedupe on logical ID, no retrofit) lives in the colony `Audit log` section.
+
 ## Issue → Doc
 
 Issue bodies render in the GitHub web UI, where repo-relative links do not
