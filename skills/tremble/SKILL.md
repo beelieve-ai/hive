@@ -55,8 +55,14 @@ Ground rules that bind every step:
    with `-` (e.g. `/home/u/dev/hive` → `-home-u-dev-hive`;
    `/home/u/dev/hive/.claude/worktrees/wt` →
    `-home-u-dev-hive--claude-worktrees-wt`). Verify the derived directory
-   actually exists under `~/.claude/projects/`; if it does not, list that
-   directory and match by prefix rather than trusting the derivation blindly.
+   actually exists under `~/.claude/projects/`. The encoding is **lossy**
+   (`/` and `.` collapse to the same character), so **never auto-match by
+   prefix or similarity** — a near-miss could silently read *another
+   project's* transcripts, breaking tremble's scope guarantee. If the derived
+   directory is missing or more than one candidate plausibly corresponds,
+   enumerate the candidates and pose the choice via **AskUserQuestion**
+   (include a "none of these — abort" option); with no plausible candidate,
+   fail loud and stop.
 4. **State/scratch root** = `~/.claude/projects/<encode(main_root)>/hive-tremble/`
    with `state.json`, `reports/<timestamp>.md`, and `tmp/<run-id>/`. Create it
    if absent. Generate `run-id` and timestamps from `date -u +%Y%m%dT%H%M%SZ`
