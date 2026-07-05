@@ -1,0 +1,33 @@
+# Hive agent model presets.
+# Selects the model each Hive agent role is spawned with.
+# Switch preset via `active:` here, or per-project via `.hive/models.yaml`
+# in the consuming repo with two optional flat keys: `active:` switches the
+# preset, and `agents:` pins individual roles on top of it (e.g.
+# `agents: {scout: fable}`). Precedence: agents pin > active preset >
+# agent frontmatter. No deep-merge.
+# If resolution fails, orchestrators omit the model param and each agent's
+# frontmatter default (aligned to `balanced`) applies.
+active: balanced
+
+presets:
+  quality:
+    architect: opus
+    planner: opus
+    guard: opus
+    worker: sonnet
+    scout: opus
+    plan-reviewer: opus     # applies to all three plan-reviewer-* agents
+  balanced:
+    architect: opus
+    planner: sonnet
+    guard: sonnet
+    worker: sonnet
+    scout: opus             # research quality gates everything downstream
+    plan-reviewer: sonnet
+  cheap:
+    architect: sonnet
+    planner: sonnet
+    guard: haiku
+    worker: haiku
+    scout: haiku
+    plan-reviewer: sonnet   # deliberate floor: a bad plan poisons every downstream worker

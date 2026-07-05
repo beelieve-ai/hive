@@ -6,7 +6,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
-## [0.4.0] — 2026-07-05
+## [0.6.0] — 2026-07-05
 
 ### Added
 - **Evidence provenance for research**: every Evidence citation in a RES doc
@@ -32,7 +32,9 @@ authoritative version is the `version` field in
   counters with an explicit skip list for trivial lookups.
 
 ### Changed
-- The scout agent runs on `model: opus` (was `sonnet`) and returns a
+- The scout runs on **opus** (was `sonnet`): `balanced.scout` is raised to
+  `opus` in `models.yaml` — research quality gates everything downstream —
+  and the scout's frontmatter fallback matches. The scout returns a
   tightened, citation-only summary (no page dumps or tool transcripts) with
   a bounded-search rule.
 - The research method is consolidated: `research-method` is the single
@@ -44,17 +46,67 @@ authoritative version is the `version` field in
   audit log documents the marker-based exemption for assumption
   acceptances.
 
-## [0.3.0] — 2026-07-04
+## [0.5.1] — 2026-07-05
+
+### Removed
+- Accidental root `CONTEXT.md` (a consumer-project artifact that a grilling
+  session created in the plugin's own source repo) and its references in
+  `CLAUDE.md` and the README repository layout.
+
+## [0.5.0] — 2026-07-05
 
 ### Added
-- **Per-PRD audit log** (`docs/audit/PRD-NNN-audit.md`): append-only
-  provenance of gate verdicts and doc status flips, one fixed-schema line
-  per event, written by the phase that owns the status write in the same
-  commit as the artifact.
+- `/hive:tremble [--all]` — mines this project's own Claude Code session
+  transcripts and hive audit logs for evidence of friction the hive system
+  itself caused, drafts sanitized upstream issues about those weaknesses, and —
+  only after per-issue approval — files them in `beelieve-ai/hive` (a
+  deliberately hardcoded target, exceptional vs. the current-repo resolution
+  lifecycle commands use). Four-layer sanitization (generic by construction,
+  deterministic redaction check, LLM pass, human verbatim gate) keeps
+  project-specific information — paths, names, code, quotes — on the machine;
+  `--all` forces a re-scan of already-analyzed sessions.
+- `tremble-analyzer` agent (spawned as `hive:tremble-analyzer`) — a read-only
+  per-session analyzer (Read/Grep/Glob) that returns structured, sanitized
+  findings against a fixed friction taxonomy plus a catch-all.
+
+## [0.4.0] — 2026-07-05
+
+### Added
+- **Per-role model presets** (`models.yaml` at the plugin root): three presets
+  — `quality`, `balanced`, `cheap` — each a per-role matrix (`architect`,
+  `planner`, `guard`, `worker`, `scout`, `plan-reviewer`), with a top-level
+  `active:` key selecting the live preset. The single `plan-reviewer` key
+  covers all three reviewer variants.
+- **Per-project override at `.hive/models.yaml`**: `active:` switches the
+  preset, and an optional flat `agents:` map pins individual roles on top of
+  it (e.g. `agents: {scout: fable}`). Precedence: `agents:` pin > active
+  preset > frontmatter fallback. No deep-merge.
+
+### Changed
+- Orchestrator skills (`/hive:forage`, `/hive:waggle`, `/hive:comb`,
+  `/hive:swarm`) now resolve `presets[active][role]` and pass it as the `model`
+  param on every agent spawn, including comb's planner and swarm's worker fix
+  rounds; `/hive:bumble` inherits this by running the phase skills fresh. On any
+  resolution failure the param is omitted and the agent's frontmatter default
+  applies, with a warning — model config never hard-fails a lifecycle command.
+- Agent frontmatter aligned to the `balanced` preset as the fallback tier:
+  `planner`, `guard`, and `plan-reviewer-sizing` move `opus` → `sonnet`.
+
+## [0.3.0] — 2026-07-04
+
+_Backfilled — this version shipped in the manifest without a changelog entry._
+
+### Added
+- **Per-PRD audit log**: one append-only provenance file per PRD at
+  `docs/audit/PRD-NNN-audit.md` with a fixed one-line markdown schema, written
+  by the phase that owns each status write in the same commit. Records human
+  gate verdicts, `--yolo` auto-accepts, and doc status flips; exempt from the
+  docs=intent / issues=execution split and never read for routing. Canonical
+  term "audit log" added to the root `CONTEXT.md` glossary.
 
 ### Fixed
-- Audit-log append instructions hardened against review gaps (derived from
-  doc state on re-run, no double-logging, no empty logs).
+- Audit-log append instructions: review gaps closed (deterministic append
+  anchors and ownership).
 
 ## [0.2.0] — 2026-07-04
 
