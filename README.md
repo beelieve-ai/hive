@@ -6,10 +6,15 @@ An AI-driven development lifecycle (AI-DLC) for [beelieve-ai](https://github.com
 
 ## Install
 
-Hive ships as a Claude Code plugin. Add the marketplace and install it:
+Hive ships as a Claude Code plugin. Add the marketplace:
 
 ```
 /plugin marketplace add beelieve-ai/hive
+```
+
+ and install it:
+
+```
 /plugin install hive@beelieve-ai
 ```
 
