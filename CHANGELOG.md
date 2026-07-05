@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.8.0] — 2026-07-05
+
+### Added
+- **Clickable artifact references in audit logs**: every doc-artifact ID
+  (`PRD-NNN`, `RES-NNN`, `ADR-NNNN`, `PLAN-NNN`) written into a new audit
+  entry — `subject` and `detail` alike — is now an inline relative Markdown
+  link to the artifact file, resolved at write time by globbing the artifact
+  directory (bare-ID fallback on zero or ambiguous matches; exact-token
+  matching so requirement anchors like `PRD-003-R1` are untouched; `#NN`
+  issue refs stay bare). Existing entries are not retrofitted, so
+  idempotency/dedupe checks compare the logical ID across bare and linked
+  forms. Normative rule in `rules/colony.md` (Audit log), supporting note in
+  the `crosslinking` skill.
+
 ## [0.7.0] — 2026-07-05
 
 ### Added

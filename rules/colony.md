@@ -127,11 +127,26 @@ it is **never read for routing or resume** — the artifacts remain the state.
 
 - **One markdown line per event, fixed schema**:
   `- <UTC timestamp> · <event> · <subject> · <detail> · by: human|yolo`
-  e.g. `- 2026-07-04T14:32Z · adr-accepted · ADR-0007 · option: embedded queue · by: human`.
+  e.g. `- 2026-07-04T14:32Z · adr-accepted · [ADR-0007](../adr/ADR-0007-queue-backend.md) · option: embedded queue · by: human`.
   Timestamp via `date -u +%Y-%m-%dT%H:%MZ`. All five fields appear on every
   line: `subject` is the artifact the event is about (a doc id like
   `ADR-0007`, or an issue number); `detail` is short free text — write `—`
   when there is nothing to add.
+- **Doc-artifact IDs are written as links**: every mention of a doc-artifact
+  ID (`PRD-NNN`, `RES-NNN`, `ADR-NNNN`, `PLAN-NNN`) in a new entry —
+  `subject` and `detail` alike — is an inline Markdown link, relative to the
+  audit file, to the artifact file itself. Resolve the real path at write
+  time by globbing the artifact directory (`docs/prd/PRD-NNN-*.md`,
+  `docs/research/RES-NNN-*.md`, `docs/adr/ADR-NNNN-*.md`,
+  `docs/plans/PLAN-NNN-*.yaml`) — never guess a slug. Zero or multiple glob
+  matches → write the bare ID instead. Match exact ID tokens only: a token
+  with a further suffix (e.g. the requirement anchor `PRD-003-R1`) is not an
+  artifact ID — leave it untouched — and never wrap an ID already inside a
+  link. Issue/PR references (`#NN`) stay bare (GitHub auto-links them).
+  Entries written before this rule are never retrofitted, so
+  idempotency/dedupe checks (e.g. forage's event+subject dedupe, comb's
+  skip-on-recorded-verdict) compare the **logical ID**, matching bare
+  `RES-004` and linked `[RES-004](…)` subjects alike.
 - **Events recorded**: every human gate verdict (`prd-approved`,
   `adr-accepted`, `adr-rejected`, `plan-approved`, `plan-declined`,
   `pause-resolved`), every `--yolo` auto-accept (same event names,
