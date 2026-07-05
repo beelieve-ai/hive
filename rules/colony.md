@@ -196,7 +196,10 @@ it is **never read for routing or resume** — the artifacts remain the state.
   to PRD approval, to pre-existing proposed ADRs or plans, to any PAUSE,
   error, or ambiguity resolution, or to missing-argument prompts: those
   always go to the human, flag or no flag. Headless runs without `--yolo`
-  still never auto-approve.
+  still never auto-approve. Doc-PR **merge consent follows the same
+  boundaries** (see Doc commit flow): the three covered gate verdicts also
+  merge the doc PR recording them — nothing more; headless without `--yolo`
+  leaves authored-artifact PRs open, never merged.
 - **All user interaction goes through the `AskUserQuestion` tool — no
   exceptions.** Every question, gate verdict, PAUSE resolution, and
   missing-argument prompt: one decision per call, the recommended answer as
@@ -268,6 +271,34 @@ The `phase:*` flip is **cosmetic UI state only** — resume and ready logic
 never keys off labels. The spec's four doc-phase labels
 (prd/research/adr/plan) were dropped: doc phases live in the doc's
 `status:` frontmatter, which is the source of truth.
+
+## Doc commit flow
+
+Lifecycle documents (`docs/**` and riders like `CONTEXT.md`,
+`ARCHITECTURE.md`, audit logs) are **never pushed directly to the default
+branch** — they reach it only via a squash-merged PR (full flow in
+`hive:gh-conventions`, "Doc commit flow"). Current-branch aware, no config:
+
+- **On the default branch** → commit on a doc branch
+  (`docs/<artifact-id>-<slug>`), push, open a PR (no `Closes` footer).
+- **On a doc-intended branch** (already carries Hive doc commits, or
+  user-confirmed this session) → just commit there; the user drives the
+  merge (the dedicated-branch workflow).
+- **On any other branch** → AskUserQuestion once per branch per session:
+  commit here, or branch off the default instead.
+
+**Merge consent rides the existing human gates** — authored-artifact PRs
+are merged on an explicit ask ("Merge now" / "Leave open for review" —
+leaving open keeps the session on the doc branch so later commands stack),
+or without a second ask when a gate just approved exactly that content
+(comb's plan approval). Under `/hive:bumble --yolo` the carve-out's gate
+verdicts carry merge consent for artifacts created that run; headless
+without `--yolo` never merges — the PR is left open and reported.
+**Mechanical write-backs** (issue numbers, status flips, audit entries) PR
++ auto-squash-merge with no ask in every mode. Before any Hive-driven merge
+of a PR introducing a lifecycle artifact file, the ID-collision check in
+`hive:gh-conventions` runs (re-glob the artifact directory on the remote
+default; renumber and relink on collision).
 
 ## Branch / PR flow
 

@@ -189,9 +189,12 @@ Implicit questions scouts flagged outside their cluster:
 
 ## 8. Commit
 
-Sync local main first per the `gh-conventions` skill
-(`git switch main && git pull --ff-only origin main` before any commit on
-main — after any prior squash-merge, local main is stale).
+This run's doc changes persist through the **doc commit flow**
+(`hive:gh-conventions`, authored-artifact variant): on the default branch
+that means one doc branch for the run (`docs/RES-NNN-<slug>`, the first
+new RES id), commit, push, PR — **defer the merge ask** until the run ends
+(step 9 may still commit acceptance markers to the same branch). On a
+doc-intended branch, just commit there.
 
 Audit the `res-answered` log, **deduping on event + subject only** (the
 `res-answered` event and the RES id — not the detail). For every RES doc in
@@ -212,8 +215,8 @@ research docs, the PRD, and the audit log when touched, together
 docs(research): add RES-004, RES-005 for PRD-003
 ```
 
-Then push (`git push origin main`). Do not commit unrelated files. No
-`gh` calls happen in this command — nothing touches GitHub issues here.
+Do not commit unrelated files. Nothing touches GitHub issues here — the
+only `gh` calls are the doc commit flow's own PR handling.
 
 ## 9. Gate: research docs `status: answered`
 
@@ -244,17 +247,24 @@ For each unaccepted assumption a blocked doc relies on:
 
 **On Accept (human or yolo):** edit the doc — write the acceptance marker
 (`— accepted YYYY-MM-DD by human|yolo`) on that `A<n>`, and flip
-`status: answered` only if the whole done criterion now holds. **Commit +
-push the marker edit regardless of whether the doc flips** — the marker is
-the sole provenance record while the doc stays `open`. When the doc **does**
-flip in that same edit, its single `res-answered` audit line (step 8,
-`by: human|yolo`, detail `accepted: …`) joins that commit. Then re-evaluate
-the gate.
+`status: answered` only if the whole done criterion now holds. **Commit the
+marker edit to the run's doc branch (push) regardless of whether the doc
+flips** — the marker is the sole provenance record while the doc stays
+`open`. When the doc **does** flip in that same edit, its single
+`res-answered` audit line (step 8, `by: human|yolo`, detail `accepted: …`)
+joins that commit. Then re-evaluate the gate.
 
 **On Keep-open, or headless without `--yolo`:** report the gate is unmet,
 naming the blocking assumptions, and stop.
 
-### 9.2 Report
+### 9.2 Settle the run's doc PR, then report
+
+If the run opened a doc PR (step 8), settle it now per the doc commit
+flow's merge rules: interactive → the merge ask ("Merge now (Recommended)"
+/ "Leave open for review"; the PR introduces new RES files, so the
+ID-collision check applies before merging). Under `/hive:bumble --yolo`,
+auto-merge — the run's gate verdicts carry merge consent. Headless without
+`--yolo` → leave the PR open and include its URL in the report.
 
 - **All answered** → the gate is met. Report a summary table (`RES id →
   topic → questions → status`) with a **worst-confidence-per-doc** column

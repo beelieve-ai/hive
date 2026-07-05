@@ -287,20 +287,28 @@ is a **new** `/hive:waggle` run that supersedes it — never an edit.
 
 ## 8. Commit
 
-Sync main first per the `gh-conventions` skill (`git switch main && git pull
---ff-only origin main`) — never commit on a stale main. Then commit all of
-this run's doc changes together: new ADR files, the PRD frontmatter/Open
-Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), any
-`superseded` flips, the PRD's audit log entries from step 7, plus the
-`ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from step 7. Conventional commit, e.g.:
+Persist all of this run's doc changes together through the **doc commit
+flow** (`hive:gh-conventions`, authored-artifact variant): new ADR files,
+the PRD frontmatter/Open Questions edits (or `docs/adr/DECISIONS.md` for a
+standalone run), any `superseded` flips, the PRD's audit log entries from
+step 7, plus the `ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from
+step 7 — one commit, Conventional, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003
 docs(adr): add ADR-0001 CI provider (repo-scoped)
 ```
 
+Per that flow: on the default branch this means a doc branch
+(`docs/ADR-NNNN-<slug>`, the first accepted id), push, PR (new ADR files →
+the ID-collision check applies before merging), then the merge ask —
+"Merge now (Recommended)" / "Leave open for review". Under
+`/hive:bumble --yolo` the ADR-acceptance verdicts the carve-out covered
+also carry merge consent — auto-merge, no ask. On a doc-intended branch,
+just commit there.
+
 Do not push issues, create issues, or touch anything under `.github` — this
-command produces documents only. (`/hive:comb` pushes docs before materializing.)
+command produces documents only.
 
 ## 9. Report
 

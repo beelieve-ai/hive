@@ -1,6 +1,6 @@
 ---
 name: gh-conventions
-description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types (org repos) or type:* label fallback (user repos) and dependencies, DAG reads, issue/PR number capture, and the branch/PR/squash-merge flow. Load whenever creating or editing milestones, issues, or PRs for hive:managed work.
+description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types (org repos) or type:* label fallback (user repos) and dependencies, DAG reads, issue/PR number capture, the branch/PR/squash-merge flow, and the doc commit flow every Hive command uses to persist lifecycle documents. Load whenever creating or editing milestones, issues, or PRs for hive:managed work, or committing lifecycle docs.
 ---
 
 # gh conventions
@@ -231,6 +231,71 @@ a reminder, not work for the build loop, hence its deliberate exceptions:
   it (`gh issue reopen <n>`) and update; unresolved set empty → close it
   (`gh issue close <n>`). Humans may also close it manually; the next
   comb run corrects state either way.
+
+## Doc commit flow (lifecycle documents)
+
+How every Hive command persists lifecycle docs (`docs/**`, plus riders like
+`CONTEXT.md`, `ARCHITECTURE.md`, the root `CLAUDE.md` import line, and audit
+logs). **Hive never pushes directly to the default branch** — doc changes
+reach it only through a squash-merged PR. This flow is doc-shaped; do not
+copy the issue flow below verbatim (different branch names, no `Closes #N`
+footer, different merge rules).
+
+### Where to commit (decide once per commit point)
+
+1. **On the default branch** → create a doc branch and work there:
+   `git switch -c docs/<primary-artifact-id>-<slug>` (e.g.
+   `docs/PRD-004-checkout`, `docs/PLAN-007-materialize` for a write-back).
+   One branch per command run — later commits of the same run reuse it.
+2. **On a doc-intended non-default branch** → commit there; merging is the
+   user's business (the dedicated-branch workflow). Doc-intended = the
+   branch already carries Hive doc commits (its history since diverging
+   from the default touches `docs/`), or the user confirmed it this
+   session. Push only if the branch tracks a remote.
+3. **On any other non-default branch** (a worker `issue/*` branch, an
+   unrelated feature branch) → ask via **AskUserQuestion**, once per branch
+   per session: commit lifecycle docs here, or branch off the default
+   instead (option 1)? Remember the answer for the session. Lifecycle docs
+   never mix into unrelated branches silently.
+
+### Two variants (only case 1 creates a PR)
+
+- **Authored artifact** — new or edited PRD / RES / ADR / plan content and
+  its riders. Commit (Conventional Commits), push
+  (`git push -u origin <doc-branch>`), open the PR
+  (`gh pr create --fill` — no `Closes` footer; body names the artifact
+  ids). **Merge consent rides the human gates, never a new blanket rule**:
+  - Interactive runs: ask via **AskUserQuestion** — "Merge now
+    (Recommended)" (squash-merge, then the mandatory main sync) or "Leave
+    open for review" (report the PR URL; **stay on the doc branch** so
+    dependent commands stack on it). A command whose gate already approved
+    exactly this content (e.g. comb's plan approval) merges without a
+    second ask.
+  - `/hive:bumble --yolo`: auto-merge only PRs recording gate verdicts the
+    carve-out covers, for artifacts created during that run. Headless
+    without `--yolo`: never merge — leave the PR open and report it,
+    exactly as gates never auto-approve.
+- **Write-back** — mechanical bookkeeping only (issue numbers, status
+  flips, audit entries). Same branching, then PR + **immediate
+  auto-squash-merge, no ask**, any mode. A blocked merge → classify per
+  Merge failures below, stop, and hand the user the PR URL.
+
+### ID-collision check (before any Hive-driven merge)
+
+IDs are minted by globbing the local checkout, so two parallel branches can
+mint the same `ADR-0010` without a git conflict. Before merging **any doc
+PR that introduces a lifecycle artifact file** (`docs/prd/PRD-*`,
+`docs/research/RES-*`, `docs/adr/ADR-*`, `docs/plans/PLAN-*`) — authored or
+write-back-labelled alike (e.g. comb's Decline PR carries a new plan):
+
+1. `git fetch origin <default-branch>`, then list the artifact directory on
+   the remote default (e.g. `git ls-tree --name-only origin/<default-branch> docs/adr/`).
+2. If the new file's ID already exists there under a different file,
+   renumber before merging: rename the file to the next free ID and update
+   the frontmatter `id:` and **every** reference to the old ID on the
+   branch (docs, audit lines, plan fields).
+
+After every squash-merge, the mandatory main sync below applies.
 
 ## Branch / PR flow
 

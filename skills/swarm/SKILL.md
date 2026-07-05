@@ -46,7 +46,8 @@ Ground rules that bind every step:
   between issues (Step 3.1) and on the worker's branch. Record the
   resolution in your running table and append all pending entries at
   Step 5; when a resolution ends the run instead, sync main, then append
-  and commit the entries before stopping.
+  and commit the entries via the doc commit flow's write-back variant
+  (PR + auto-squash-merge, per `hive:gh-conventions`) before stopping.
 
 ## Step 0 — Resolve the argument to a milestone queue
 
@@ -90,8 +91,8 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    per `hive:writing-prds` (here: all entries implemented → set
    `status: implemented`), append the `prd-implemented` audit entry
    (subject: the PRD id, detail: `plans: <every PLAN-NNN in the list>`) if
-   not already recorded, and commit+push per Step 5 item 3 — no milestone
-   steps run on this path.
+   not already recorded, and commit per Step 5 item 3 (write-back variant)
+   — no milestone steps run on this path.
 4. Work the queue **strictly sequentially in list order**: for each
    milestone queued for execution, run Step 0.5, then Steps 1–5; an
    **interrupted-closeout** entry (queued for Step 5 only) skips straight
@@ -452,10 +453,12 @@ Runs once per milestone in the queue. Execute in exactly this order:
    - **only if** the derived status flipped to implemented:
      `prd-implemented` (subject: the PRD id, detail:
      `plans: <every PLAN-NNN in the list>`).
-3. Commit and push:
-   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> milestone <milestone-number> implemented" && git push origin main`
+3. Commit via the doc commit flow's **write-back variant**
+   (`hive:gh-conventions`): doc branch off fresh main, then
+   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> milestone <milestone-number> implemented"`
    (use `docs(prd): mark <PRD-id> implemented` when the PRD-level status
-   flipped).
+   flipped), push, PR, auto-squash-merge with no ask, sync main. A blocked
+   merge → stop and report the PR URL.
 4. **Close the epic explicitly**: `gh issue close <epic#>`. This is
    load-bearing — the epic shares the milestone with the tasks and nothing
    auto-closes it, so without this step the milestone could never be
