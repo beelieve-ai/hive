@@ -138,6 +138,10 @@ it is **never read for routing or resume** — the artifacts remain the state.
   `by: yolo`), and every doc status flip (`res-answered`, `plan-reviewed`,
   `plan-materialized`, `prd-planned`, `prd-implemented`, `adr-superseded`).
   Halts, errors, and retries are **not** logged.
+- **Research-assumption acceptances are exempt** — they are recorded by the
+  RES doc's Assumptions Log markers (`accepted … by human|yolo`), not as their
+  own audit events; the `res-answered` entry's `detail` lists the accepted ids
+  at flip time.
 - **Writer**: the phase that owns a status write appends the entry at the
   same moment and commits it **in the same commit** as the artifact it
   records — standalone runs and `/hive:bumble` runs behave identically;
@@ -158,9 +162,11 @@ it is **never read for routing or resume** — the artifacts remain the state.
   before materialization. Never skip, never auto-accept. **Single, narrow
   carve-out — `/hive:bumble --yolo`**: passing `--yolo` on a `/hive:bumble`
   invocation IS the human's explicit gate declaration, delegated in advance
-  for that run only, covering exactly two gate types — per-ADR acceptance
-  (the architect's recommended option) and plan approval before
-  materialization — and only for artifacts created during that run. At those
+  for that run only, covering exactly three gate types — per-ADR acceptance
+  (the architect's recommended option), plan approval before materialization,
+  and research-assumption acceptance at the forage gate (only assumptions
+  introduced during that run, per the forage-entry snapshot; marked
+  `by: yolo`) — and only for artifacts created during that run. At those
   gates no question is posed — the answer was given at invocation — and every
   auto-accepted verdict is listed in the run report. `--yolo` never extends
   to PRD approval, to pre-existing proposed ADRs or plans, to any PAUSE,
@@ -178,7 +184,7 @@ it is **never read for routing or resume** — the artifacts remain the state.
   work), and let "Other" carry the free-form answer. Never ask in plain
   prose. Selecting an explicit Approve/Accept option **is** the explicit
   human declaration the gates require — silence or enthusiasm still is not.
-  One delegation exception: the two gate types `/hive:bumble --yolo` covers
+  One delegation exception: the three gate types `/hive:bumble --yolo` covers
   are answered by the flag itself, per the human-gates carve-out above — no
   question is posed there. One environment exception: in a
   headless/non-interactive run the tool genuinely does not exist — state that

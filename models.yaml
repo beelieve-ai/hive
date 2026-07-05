@@ -22,7 +22,7 @@ presets:
     planner: sonnet
     guard: sonnet
     worker: sonnet
-    scout: sonnet
+    scout: opus             # research quality gates everything downstream
     plan-reviewer: sonnet
   cheap:
     architect: sonnet
