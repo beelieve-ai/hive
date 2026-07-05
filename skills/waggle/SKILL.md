@@ -194,6 +194,14 @@ For each returned draft, before writing:
   architect once with the specific gap named. Still incomplete ⇒ report the
   failure to the user and drop that candidate from this run (do not write a
   broken ADR).
+- Verify **provenance**: every web-sourced claim in option prose carries an
+  inline tag + confidence in the pinned format
+  (`[VERIFIED: <source>, confidence: HIGH]` /
+  `[CITED: <url>, confidence: MEDIUM]` / `[ASSUMED, confidence: LOW]`), the
+  `## Assumptions` section is present (`None.` is valid), and every inline
+  `[ASSUMED…]` claim has a matching Assumptions bullet. Gaps are handled
+  exactly like structural incompleteness above: one re-invoke with the gap
+  named, then report-and-drop.
 
 Write each verified draft to `docs/adr/ADR-NNNN-<slug>.md` (slug: short,
 lowercase, hyphenated, from the decision topic). Do **not** touch the PRD's
@@ -202,7 +210,12 @@ lowercase, hyphenated, from the decision topic). Do **not** touch the PRD's
 ## 7. Present and gate — per decision, never in bulk
 
 For **each** ADR, one at a time: show the user the considered options with
-their honest pros/cons, the architect's recommendation, and the file path.
+their honest pros/cons, the architect's recommendation, the file path, and —
+explicitly called out — the draft's `## Assumptions` entries, so acceptance
+happens with every unverified claim in view. A resumed pre-existing
+`status: proposed` ADR with no `## Assumptions` section predates the
+provenance discipline: flag it as "no provenance block present (pre-0.7.0
+draft)" and let the human decide — never re-draft it for that reason alone.
 Then ask for the verdict with **AskUserQuestion** — one call per ADR, never
 batched: first option **"Accept <chosen option> (Recommended)"** with the
 architect's one-line justification in the description, then one option per
@@ -243,7 +256,11 @@ considered alternative ("Accept <other option> instead"), then
   editable: update the Decision Outcome (and consequences) to the user's
   chosen option, show the revised text, then confirm via **AskUserQuestion**
   ("Accept the revised ADR (Recommended)" / "Revise further") and proceed
-  as Accept only on that explicit confirmation.
+  as Accept only on that explicit confirmation. After **any** revision on
+  this path — including each "Revise further" round — rerun the step-6
+  provenance checks on the revised text and re-state its Assumptions
+  entries before asking for confirmation: edits made after persistence must
+  not smuggle untagged or unlisted claims past the gate.
 - **Reject / defer** — leave the file at `status: proposed` (its id stays
   retired either way — ids are never reused), and record a one-line note
   that the decision is drafted but undecided (`ADR-NNNN proposed,

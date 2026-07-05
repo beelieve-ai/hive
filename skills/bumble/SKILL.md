@@ -130,7 +130,11 @@ automatically after each verdict**; you relay the decision and move on.
 
 1. **waggle step-7 per-ADR acceptance** → the recommended option
    (`Accept <chosen option>`). This is **one call per ADR**, so **N ADRs = N
-   auto-accepts**, each listed separately in the run report.
+   auto-accepts**, each listed separately in the run report. **Exception:**
+   an ADR whose draft carries any `[ASSUMED…]` claim (a non-`None.`
+   `## Assumptions` section) is **never auto-accepted** — its gate goes to
+   the human even under `--yolo`, so an unverified claim cannot become an
+   accepted decision without a human seeing it.
 2. **comb Step 3 plan approval** → `Approve — materialize` (only reachable
    after all three plan reviewers passed).
 3. **forage research-assumption acceptance** → `Accept assumption`. Note this

@@ -59,6 +59,10 @@ Frontmatter per the template: `id`, `status`, `scope` (`prd` | `repo`),
    consequence; if you can't name one, the trade-off leg of the worthiness
    test probably failed.
 6. **Pros and Cons of the Options** — one subsection per option.
+7. **Assumptions** — one bullet per inline `[ASSUMED]` claim, each with
+   what would verify it; `None.` when there are none. Always present in
+   new drafts — `/hive:waggle` validates inline `[ASSUMED…]` tags against
+   this section.
 
 Use canonical glossary terms from root `CONTEXT.md` when it exists.
 Reference the PRD (when one exists) and any research docs by ID **and**
@@ -76,6 +80,15 @@ repo-relative link.
   clear statement of why it lost, tied to the decision drivers, not just
   a cons list. "Rejected because driver D2 (operational simplicity)
   outweighs its performance edge" beats "has downsides".
+- **Provenance on web-sourced claims.** Every material claim that came from
+  web research carries an inline tag + confidence exactly where it is used:
+  `[VERIFIED: <source>, confidence: HIGH]` /
+  `[CITED: <url>, confidence: MEDIUM]` / `[ASSUMED, confidence: LOW]` —
+  uppercase tag and confidence; tag semantics and confidence ceilings per
+  the `research-method` skill (official docs fetched and read are primary,
+  hence VERIFIED; confidence never rated above its tag's ceiling). Every
+  `[ASSUMED]` claim repeats as a bullet in the ADR's `## Assumptions`
+  section, which is always present (`None.` when empty).
 
 ## Diagrams
 
@@ -208,4 +221,11 @@ Chosen option: "<option 1>", because <justification>.
 
 - Good, because <argument>
 - Bad, because <argument>
+
+## Assumptions
+
+<!-- One bullet per inline [ASSUMED] claim — what is assumed and what would
+     verify it. "None." when the draft carries no ASSUMED claims. -->
+
+- None.
 ```
