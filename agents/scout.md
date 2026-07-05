@@ -59,8 +59,10 @@ crosslinking rules). Then, **per assigned question**:
   hedge word in the Answer means the evidence is missing — get it or downgrade.
 - **Evidence** — tagged, locator-granularity citations backing every material
   claim: `[VERIFIED: src/auth/session.py:42]`, `[CITED: <url>]`, or
-  `[ASSUMED]` citing its `A<n>` id. One-line quotes max. No page dumps, no
-  search narrative, no tool transcripts.
+  `[ASSUMED]` citing its `A<n>` id. One-line quotes max — a single-line
+  command + output (`grep -rn X src/` → no hits) is a legitimate citation,
+  especially for negative findings. No page dumps, no search narrative, no
+  multi-line tool transcripts.
 
 Then, **doc-level**:
 

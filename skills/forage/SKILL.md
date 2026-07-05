@@ -140,7 +140,8 @@ For each new cluster:
    PRD id), `status`, `questions` (the verbatim list), `created` (today).
    Body: one `## Q<n>` section per question with `### Findings`,
    `### Evidence` (provenance-tagged citations —
-   `[VERIFIED:]`/`[CITED:]`/`[ASSUMED]`), and `### Answer` (carrying its
+   `[VERIFIED: <source>]`/`[CITED: <url>]`/`[ASSUMED]`), and `### Answer`
+   (carrying its
    `**Confidence:** HIGH | MEDIUM | LOW`), plus the doc-level
    `## Assumptions Log` (one `A<n>` bullet per `[ASSUMED]` claim, or
    "None."). Include a body reference to the PRD by ID **and** repo-relative

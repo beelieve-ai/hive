@@ -184,7 +184,7 @@ it is **never read for routing or resume** — the artifacts remain the state.
   work), and let "Other" carry the free-form answer. Never ask in plain
   prose. Selecting an explicit Approve/Accept option **is** the explicit
   human declaration the gates require — silence or enthusiasm still is not.
-  One delegation exception: the two gate types `/hive:bumble --yolo` covers
+  One delegation exception: the three gate types `/hive:bumble --yolo` covers
   are answered by the flag itself, per the human-gates carve-out above — no
   question is posed there. One environment exception: in a
   headless/non-interactive run the tool genuinely does not exist — state that
