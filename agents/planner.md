@@ -16,8 +16,10 @@ throughout the plan.
 
 The orchestrator gives you:
 
-- the path to one approved PRD (`docs/prd/PRD-NNN-slug.md`), and
-- the paths of **all accepted ADRs** relevant to it (possibly none).
+- the path to one approved PRD (`docs/prd/PRD-NNN-slug.md`),
+- the paths of **all accepted ADRs** relevant to it (possibly none), and
+- the worker model and implementor tier (`weak` / `strong`) it resolved from
+  the model config — assume `weak` when absent.
 
 Read the PRD in full — every `### R<n>:` requirement anchor and its acceptance
 criteria — and every ADR's decision and consequences. Explore the codebase
@@ -39,6 +41,8 @@ Fill the fields as follows:
   a plan with zero ADRs is valid).
 - `status: draft`, `review: null`, `reviewed_by: []`, `reviewed_at: null` —
   review state belongs to the orchestrator, never pre-fill it.
+- `calibration:` — the worker model and tier exactly as the orchestrator
+  gave them (never invent or re-derive them yourself).
 - `milestone_title:` — a short, stable title for this phase's milestone.
 - `milestone_verification:` — the plan-level `command:` per the
   decomposition skill's **Milestone verification** section (self-asserting,
@@ -78,6 +82,19 @@ dag, sizing) check exactly those rules:
   `## Acceptance criteria` (measurable), and a mandatory `## Verification`
   section with runnable, **self-asserting** command(s) whose exit code alone
   decides done — never a manual check, never prose the reader must judge.
+- **Calibration-aware bodies**: on `weak` tier, every task's `## Context`
+  carries the `### Preflight` / `### Goal` / `### Files` / `### Changes`
+  anatomy per the decomposition skill's **Calibration and weak-mode
+  anatomy** section; on `strong` tier the subsections are optional but the
+  self-containedness checklist binds in full either way.
+- **Assumptions resolved at planning time**: verify factual claims against
+  the real repo (Read, Grep, Glob) while drafting. Only what you genuinely
+  cannot verify becomes a Preflight entry (check command + stop-if-false) —
+  never a silent premise.
+- **Vertical slices, every task ends green**: after any task's verification
+  passes, the repo builds, tests pass, and the slice delivered so far
+  demonstrably works end to end. No task may leave the system broken for a
+  later task to repair.
 - **Sizing**: one task ≈ one fresh-context session ≈ 2–5 files touched;
   split oversized tasks along independently verifiable seams.
 

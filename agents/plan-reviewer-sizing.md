@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer-sizing
-description: Read-only plan reviewer for task sizing and verifiability. Use during /hive:comb plan review (in parallel with plan-reviewer-context and plan-reviewer-dag) to check that every task in a plan.yaml fits one fresh-context worker session (~2–5 files), has measurable acceptance criteria, and carries a self-asserting headless Verification command — and that the plan carries a milestone_verification command — proposing concrete splits for oversized tasks. Input: the plan.yaml path. Output: a strict JSON verdict.
+description: Read-only plan reviewer for task sizing and verifiability. Use during /hive:comb plan review (in parallel with plan-reviewer-context and plan-reviewer-dag) to check that every task in a plan.yaml fits one fresh-context worker session (~2–5 files), has measurable acceptance criteria, and carries a self-asserting headless Verification command — and that the plan carries a milestone_verification command and a calibration block (weak tier: Preflight check commands meet the same bar) — proposing concrete splits for oversized tasks. Input: the plan.yaml path. Output: a strict JSON verdict.
 tools: Read, Grep, Glob
 model: sonnet
 ---
@@ -59,7 +59,11 @@ The plan **passes** only if every task satisfies all of the following:
    as the fix — there is no manual-verification escape hatch. A `test -f
    path` check is acceptable only for pure file-creation tasks. A missing
    section, a prose-only section, or a command that cannot actually run is
-   a finding.
+   a finding. When the plan's `calibration.tier` is `weak`, the same bar
+   applies to every check command in a task's `### Preflight` subsection —
+   judge runnability and self-assertion from the repo (you cannot execute
+   commands); presence of the subsections themselves is the context
+   reviewer's concern.
 
 The plan as a whole must additionally satisfy:
 
@@ -68,9 +72,12 @@ The plan as a whole must additionally satisfy:
    (repo-root runnable, headless, self-asserting) and is plausibly scoped
    to run after every merge. Missing, empty, or non-self-asserting →
    a finding under the sentinel task key `milestone_verification`.
+5. **Calibration present** — the plan has a `calibration:` block whose
+   `tier:` is `weak` or `strong`. Missing block or invalid tier → a
+   finding under the sentinel task key `calibration`.
 
-Any violation on any task (or criterion 4 on the plan) is a finding; one or
-more findings means `"verdict":"fail"`.
+Any violation on any task (or criterion 4/5 on the plan) is a finding; one
+or more findings means `"verdict":"fail"`.
 
 ## Split proposals for oversized tasks
 
@@ -91,7 +98,8 @@ the orchestrator parses only that block, and a missing or unparseable block
 counts as FAIL, never pass.
 
 - `task` is the plan task key the finding refers to (e.g. `"T2"`), or the
-  sentinel `"milestone_verification"` for plan-level criterion-4 findings.
+  sentinels `"milestone_verification"` / `"calibration"` for plan-level
+  criterion-4/5 findings.
 - `issue` states the defect precisely (the file count, the vague criterion
   quoted, the missing or non-runnable command).
 - `fix` states the concrete correction — for oversized tasks, the full

@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer-context
-description: Read-only plan reviewer for self-containedness. Use during /hive:comb plan review (in parallel with plan-reviewer-dag and plan-reviewer-sizing) to check that every task body in a plan.yaml is self-contained — real Context blocks, concrete existing file paths, and implements/adr_refs that resolve to real PRD requirement anchors and ADR docs. Input: the plan.yaml path. Output: a strict JSON verdict.
+description: Read-only plan reviewer for self-containedness. Use during /hive:comb plan review (in parallel with plan-reviewer-dag and plan-reviewer-sizing) to check that every task body in a plan.yaml is self-contained — real Context blocks, concrete existing file paths, implements/adr_refs that resolve to real PRD requirement anchors and ADR docs, and (weak calibration tier) the Preflight/Goal/Files/Changes anatomy. Input: the plan.yaml path. Output: a strict JSON verdict.
 tools: Read, Grep, Glob
 model: sonnet
 ---
@@ -48,6 +48,16 @@ The plan **passes** only if every task satisfies all of the following:
    acceptable when no ADR in the plan's `adrs:` constrains that task —
    but if a plan ADR's decision plainly bears on a task's files or
    approach and the task does not cite it, flag that as a finding.
+5. **Weak-mode anatomy** — only when the plan's `calibration.tier` is
+   `weak`: each task's `## Context` contains the `### Preflight`,
+   `### Goal`, `### Files`, `### Changes` subsections per the
+   decomposition skill's **Calibration and weak-mode anatomy** section.
+   Preflight either reads `Preflight: none` or lists assumptions where
+   every entry carries a concrete check command and the list ends with the
+   literal stop-and-report instruction. A missing subsection, an
+   assumption without a check command, or a missing stop instruction is a
+   finding. (Command *quality* — runnable, self-asserting — is the sizing
+   reviewer's concern, not yours.)
 
 Any violation on any task is a finding; one or more findings means
 `"verdict":"fail"`.

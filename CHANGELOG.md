@@ -6,6 +6,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.11.0] — 2026-07-05
+
+### Added
+- **Calibrated plans for weak implementors**: `/hive:comb` now resolves the
+  worker role's model from `models.yaml` / `.hive/models.yaml` and passes an
+  implementor tier (`weak`/`strong`, unresolved → `weak`) to the planner,
+  recorded in a new mandatory top-level `calibration:` block in plan.yaml.
+  On weak tier, every task's `## Context` carries a fixed anatomy —
+  `### Preflight` (unverifiable assumptions, each with a self-asserting
+  check command and a literal stop-and-report instruction), `### Goal`,
+  `### Files`, `### Changes` (snippets only where a weak model would err) —
+  defined in the `decomposition` skill. The planner must resolve
+  assumptions against the real repo at planning time; Preflight is only the
+  unresolvable residue.
+- **Vertical-slice rule**: decomposition now requires every task to end
+  green — after any task's verification passes, the repo builds, tests
+  pass, and the slice delivered so far works end to end.
+- **Reviewer enforcement**: plan-reviewer-context gates the weak-mode
+  anatomy (presence, check commands, stop instruction);
+  plan-reviewer-sizing gates the `calibration:` block (sentinel key
+  `calibration`) and holds Preflight check commands to the Verification
+  bar.
+
+## [0.10.0] — 2026-07-05
+
+### Added
+- **DDD lens for ADR analysis**: `/hive:waggle`'s architect applies
+  Domain-Driven Design as its analysis lens (bounded contexts, context
+  mapping incl. published language, ubiquitous language) when deriving
+  ADRs; `writing-adrs` vocabulary aligned accordingly.
+
 ## [0.9.0] — 2026-07-05
 
 ### Added
