@@ -32,6 +32,7 @@ Idea → PRD → Research → ADR → Plan → Build → Review
 | Build + Review | `/hive:swarm <milestone>` | Dependency-ordered execution: worker implements each issue on a branch, guard reviews the diff, PRs are squash-merged | merge failures pause with the PR URL |
 | Autopilot | `/hive:bumble <PRD-id> [--yolo]` | Cascades Research → ADR → Plan → Build for one approved PRD, deriving the current phase from the artifacts; resumable by re-running | all phase gates inline; `--yolo` delegates the two approval gate types for artifacts created in the run |
 | Anytime | `/hive:sting <doc-or-id>` | Sharpens any lifecycle artifact through another grilling interview — doc edits only | every edit individually agreed |
+| Feedback | `/hive:tremble [--all]` | Mines this project's own session transcripts + audit logs for friction the hive itself caused, then drafts sanitized issues in `beelieve-ai/hive` — `tremble-analyzer` agents analyze each session in parallel | per-issue approval before filing |
 
 A typical end-to-end run:
 
@@ -52,6 +53,18 @@ A typical end-to-end run:
 
 **Autopilot.** `/hive:bumble <PRD-id>` reads the lifecycle state straight from the docs and the milestone marker, then runs Research → ADR → Plan → Build in order — each phase no-ops when it has nothing to do. It pauses at every human gate inline and, on any failure, halts with a resume instruction. There is no state file: re-running `/hive:bumble` simply resumes from the artifacts on disk. Add `--yolo` to delegate the two approval gate types (ADR acceptance and plan approval) for artifacts created during that run.
 
+## Feedback: `/hive:tremble`
+
+Everything above is the lifecycle. `/hive:tremble [--all]` sits **outside** it: it
+mines *this* project's own Claude Code session transcripts and hive audit logs for
+evidence of friction the hive system itself caused, drafts sanitized GitHub issues
+about those weaknesses, and — only after per-issue approval — files them upstream in
+`beelieve-ai/hive` (the one deliberately hardcoded target repo). Four-layer
+sanitization keeps project-specific information — paths, names, code, quotes — on the
+machine; a read-only `tremble-analyzer` agent reads each session and returns only
+generic findings against a fixed friction taxonomy. `--all` forces a re-scan of
+already-analyzed sessions.
+
 ## Agents
 
 - **scout** — read-only research, spawned per independent question cluster
@@ -60,6 +73,7 @@ A typical end-to-end run:
 - **plan-reviewer-context / -dag / -sizing** — three parallel read-only plan checks (self-containedness, dependency soundness, task sizing)
 - **worker** — implements exactly one task issue per invocation
 - **guard** — read-only review verdict on the worker's branch
+- **tremble-analyzer** — read-only per-session friction analyzer for `/hive:tremble`, returning sanitized findings
 
 Reviewers never write; verdict loops belong to the orchestrating command.
 
