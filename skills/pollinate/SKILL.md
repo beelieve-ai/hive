@@ -76,8 +76,7 @@ Only after the shared-understanding gate has passed:
 2. Write `docs/prd/PRD-NNN-<slug>.md` from the template at
    the **Template** in the `hive:writing-prds` skill, following that skill:
    - Frontmatter: `id: PRD-NNN`, `title`, **`status: draft`**, `created:`
-     today's date, `research: []`, `adrs: []`, `milestone: null`,
-     `epic_issue: null`.
+     today's date, `research: []`, `adrs: []`, `milestones: []`.
    - Body sections in order: **Problem**, **Goals / Non-Goals**,
      **Requirements**, **Open Questions**.
    - Each requirement is a stable anchor heading of the exact form

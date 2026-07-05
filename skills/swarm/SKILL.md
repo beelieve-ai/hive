@@ -1,18 +1,22 @@
 ---
 name: swarm
-description: "Work an already-materialized milestone to completion — dependency-ordered task execution with worker/guard loops, agentic merge-blocker resolution (parking unresolvable PRs under hive:parked instead of halting), squash-merged PRs, post-merge milestone verification, and epic/milestone closing. Invoke explicitly as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3). Refuses to start unless the milestone description contains the plan-review: passed marker."
+description: "Execute a PRD's materialized milestones to completion — dependency-ordered task execution with worker/guard loops, agentic merge-blocker resolution (parking unresolvable PRs under hive:parked instead of halting), squash-merged PRs, post-merge milestone verification, and epic/milestone closing. Invoke as /hive:swarm <PRD-id> (e.g. /hive:swarm PRD-003) to work every remaining phase strictly in order, or as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3) to run a single milestone. Refuses to start a milestone unless its description contains the plan-review: passed marker."
 disable-model-invocation: true
 ---
 
-# /hive:swarm — execute a materialized milestone
+# /hive:swarm — execute a PRD's materialized milestones
 
-You are the orchestrator. `$ARGUMENTS` is a milestone **title or number**.
-You work through the milestone's task DAG one issue at a time — worker
-implements, guard reviews, you open and squash-merge the PR — until every
-task and the epic are closed and the milestone itself is closed. Load the
-**gh-conventions** skill for the exact `gh` command syntax before running
-any `gh` command; the ordering, gates, and write-back timing below are
-load-bearing and stated inline.
+You are the orchestrator. `$ARGUMENTS` is either a **PRD id** (`PRD-NNN` —
+the primary form: execute everything left for that PRD, milestone by
+milestone, strictly in phase order) or a milestone **title or number** (the
+single-phase form). Either way you work through each milestone's task DAG
+one issue at a time — worker implements, guard reviews, you open and
+squash-merge the PR — until every task and the epic are closed and the
+milestone itself is closed. Milestone execution is **strictly sequential**:
+one milestone finishes (Step 5 closeout included) before the next begins —
+never interleave. Load the **gh-conventions** skill for the exact `gh`
+command syntax before running any `gh` command; the ordering, gates, and
+write-back timing below are load-bearing and stated inline.
 
 Ground rules that bind every step:
 
@@ -44,33 +48,85 @@ Ground rules that bind every step:
   Step 5; when a resolution ends the run instead, sync main, then append
   and commit the entries before stopping.
 
-## Step 0 — Resolve the milestone and check the gate
+## Step 0 — Resolve the argument to a milestone queue
+
+**Mode detection**: `$ARGUMENTS` matching `PRD-\d+` (case-insensitive,
+whole token) → **PRD mode**. Anything else → **single-milestone mode**
+(title or number — the full legacy surface, and the "run just this one
+phase" override).
+
+In both modes, reading a PRD's phases means its `milestones:` frontmatter
+list (schema in `hive:writing-prds`) — the authoritative PRD→milestone
+link. **Legacy frontmatter**: singular non-null `milestone:`/`epic_issue:`
+fields are read as a one-entry list (its `plan:` resolved by grepping
+`docs/plans/PLAN-*.yaml` for `prd: <PRD-id>`; its `status:` mirroring the
+PRD status) and rewritten to list form at the Step 5 write-back.
+
+### PRD mode
+
+1. Glob `docs/prd/$ARGUMENTS-*.md` — exactly one match, else abort with
+   the candidates found. Read its `milestones:` list. Empty (and no legacy
+   fields) → error: nothing is materialized for this PRD; run
+   `/hive:comb $ARGUMENTS` first.
+2. **Candidate selection is status-first**: take every entry with
+   `status != implemented`, **in list order** (list order = phase order =
+   execution order). For each, validate against GitHub (milestone lookup
+   by number per `gh-conventions`):
+   - milestone **open with open `hive:managed` issues** → execute it
+     (queue it);
+   - milestone open (or closed) with **all its issues closed** but the
+     entry still `planned` → an interrupted closeout: queue it for
+     **Step 5 only** (write-back and closing, no work loop);
+   - milestone **closed or missing while open issues remain / entry says
+     planned with no explanation** → frontmatter↔GitHub drift: **fail
+     loudly** with what disagrees, and stop. Never guess, never
+     auto-repair drift.
+3. Zero candidates → every phase is implemented: report the PRD as
+   complete (if the PRD `status:` is somehow not yet `implemented`, finish
+   the Step 5 PRD-level write-back) and stop.
+4. Work the queue **strictly sequentially in list order**: for each
+   milestone, run the Step 0.5 gate, then Steps 1–5. Only after Step 5
+   closes one milestone does the next enter Step 0.5.
+
+### Single-milestone mode
 
 1. Resolve `$ARGUMENTS` via
    `gh api "repos/{owner}/{repo}/milestones?state=all" --paginate` and
    match locally against `.title` (exact) or `.number`. Fail loudly on
    zero or multiple matches. Capture both the **milestone number** (used
    for every PATCH) and the **title** (used by `gh issue list --milestone`).
-2. **Deterministic gate**: the milestone `.description` must contain the
-   literal marker `plan-review: passed`. If it does not, **REFUSE to
-   start** — report that the milestone has no passed plan review (run
+2. Resolve the owning PRD: read `docs/prd/*.md` frontmatter and find the
+   PRD whose `milestones:` list contains an entry with
+   `milestone: <milestone-number>` (a legacy singular `milestone:` field
+   matches too). Exactly one match is expected — record its path and the
+   matching entry (needed for the Step 5 status sync). On zero or multiple
+   matches, report the anomaly and stop.
+3. **Out-of-order guard**: if an **earlier** entry in that PRD's list is
+   not yet `implemented`, warn — name the earlier milestone and its open
+   issue count — and confirm via **AskUserQuestion** before proceeding
+   (later phases usually build on earlier ones). PRD mode cannot get out
+   of order; this guard exists only here.
+4. The queue is this single milestone; run Step 0.5, then Steps 1–5.
+
+### Step 0.5 — Per-milestone gate and setup (both modes)
+
+1. **Deterministic gate**: the milestone `.description` must contain the
+   literal marker `plan-review: passed`. If it does not, **REFUSE to start
+   that milestone** — report that it has no passed plan review (run
    /hive:comb first) and stop. Never proceed on a missing marker, never ask
    the user to waive this gate.
-3. Resolve the PRD: grep `docs/prd/*.md` frontmatter for
-   `milestone: <milestone-number>`. Exactly one match is expected —
-   record its path (needed for the Step 5 status sync). On zero or
-   multiple matches, report the anomaly and stop.
-4. **Resolve the milestone verification command**: capture the `PLAN-NNN`
+2. **Resolve the milestone verification command**: capture the `PLAN-NNN`
    id from the marker line (`plan-review: passed (PLAN-NNN)`), glob
    `docs/plans/PLAN-NNN-*.yaml`, and read its
    `milestone_verification.command`. The glob must match **exactly one**
-   file. Record the command. An older marker without a plan id, a missing
-   plan file, multiple matching plan files (ambiguous — never guess which
+   file. Record the command (per milestone — a fresh resolve each time the
+   queue advances). An older marker without a plan id, a missing plan
+   file, multiple matching plan files (ambiguous — never guess which
    command to run), or a plan without the field →
-   **no milestone verification for this run** (note it, and the reason, in
-   the final report) — never fail the run over it.
-5. **Ensure the parked label exists** (legacy milestones were materialized
-   before it): `gh label create hive:parked --force`.
+   **no milestone verification for this milestone** (note it, and the
+   reason, in the final report) — never fail the run over it.
+3. **Ensure the parked label exists** (legacy milestones were materialized
+   before it; idempotent): `gh label create hive:parked --force`.
 
 ## Step 1 — Build the state map and discover the epic
 
@@ -319,7 +375,7 @@ termination invariant (Step 5 fires only when every task is closed).
 `git switch main && git pull --ff-only origin main` — mandatory after
 every squash-merge, before anything else happens.
 
-### 3.9a Milestone verification (when Step 0.4 recorded a command)
+### 3.9a Milestone verification (when Step 0.5 recorded a command)
 
 Run the recorded `milestone_verification.command` from the repo root on the
 freshly synced main. Its exit code is the whole verdict — never interpret
@@ -333,7 +389,7 @@ output.
      the milestone, `--parent <epic#>`, labels `phase:build,hive:managed`
      plus the mode's task type, **no `--blocked-by`**. Title:
      `fix: milestone verification failure after #<n>`. Body: the
-     crosslinking header block (**PRD:** the Step 0.3 PRD ·
+     crosslinking header block (**PRD:** the Step 0 PRD ·
      **Implements:** the requirement id(s) from `#<n>`'s own header block —
      the fix restores their verified state · **ADR:** —), `## Context` with the
      failing command, its output, and the merge that preceded it
@@ -365,34 +421,54 @@ Add the same line to your running `issue# → 1-line summary` table.
 `gh issue list` call — never trust cached state) and return to Step 2.
 Repeat until no open tasks remain.
 
-## Step 5 — Termination (all tasks closed)
+## Step 5 — Milestone closeout (all its tasks closed)
 
-Execute in exactly this order:
+Runs once per milestone in the queue. Execute in exactly this order:
 
 1. **Sync main**: `git switch main && git pull --ff-only origin main`.
-2. Edit the PRD (path from Step 0.3): set frontmatter
-   `status: implemented`. This is one of the two sanctioned doc↔issue sync
-   points (the other is /hive:comb materialization). Append a
-   `prd-implemented` entry (subject: the PRD id, detail: `—`) to the PRD's
-   audit log, plus one `pause-resolved` entry per resolution recorded in
-   your running table — creating the file if absent (colony `Audit log`
-   section).
+2. Edit the PRD (path from Step 0): flip **this milestone's**
+   `milestones:` entry to `status: implemented` (rewriting legacy singular
+   `milestone:`/`epic_issue:` fields to list form if still present —
+   append-only, never reorder). Then derive the PRD `status:` per
+   `hive:writing-prds`: **every** entry `implemented` and the list
+   non-empty → `status: implemented`; otherwise it stays `planned`. This
+   is one of the two sanctioned doc↔issue sync points (the other is
+   /hive:comb materialization). Append to the PRD's audit log — creating
+   the file if absent (colony `Audit log` section):
+   - `milestone-implemented` (subject: the entry's PLAN-NNN, detail:
+     `prd: <PRD-id>; milestone: <milestone-number>`);
+   - one `pause-resolved` entry per resolution recorded in your running
+     table for this milestone;
+   - **only if** the derived status flipped to implemented:
+     `prd-implemented` (subject: the PRD id, detail:
+     `plans: <every PLAN-NNN in the list>`).
 3. Commit and push:
-   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> implemented" && git push origin main`.
+   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> milestone <milestone-number> implemented" && git push origin main`
+   (use `docs(prd): mark <PRD-id> implemented` when the PRD-level status
+   flipped).
 4. **Close the epic explicitly**: `gh issue close <epic#>`. This is
    load-bearing — the epic shares the milestone with the tasks and nothing
    auto-closes it, so without this step the milestone could never be
    emptied and the loop's termination promise would be broken.
 5. **Close the milestone**:
    `gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH -f state=closed`.
-6. **Final report** to the user: the milestone and epic that were closed,
-   the running table of `issue# → 1-line summary` (every task, including
-   any recovered/skipped ones), any non-`hive:managed` issues that were
-   ignored, whether milestone verification ran (and "legacy plan — no
-   milestone verification" when Step 0.4 found none), and the PRD now
-   marked `status: implemented`. (A run that ends at Step 2.3 instead —
-   parked tasks remaining — reports the same table plus every parked PR
-   with URL and reason; that report is the human gate.)
+6. **Advance the queue** (PRD mode): if candidates remain, proceed to the
+   next milestone in list order (Step 0.5, then Step 1). Otherwise — and
+   always in single-milestone mode — final report.
+
+## Final report
+
+Report to the user, per milestone worked: the milestone and epic that were
+closed and the running table of `issue# → 1-line summary` (every task,
+including any recovered/skipped ones), plus any non-`hive:managed` issues
+that were ignored, any interrupted closeouts that were finished, whether
+milestone verification ran (and "legacy plan — no milestone verification",
+with the reason, when Step 0.5 found none), and the PRD's resulting status
+(`implemented`, or `planned` with the phases still remaining). (A run that
+ends at Step 2.3 instead — parked tasks remaining — reports the same table
+plus every parked PR with URL and reason; that report is the human gate. A
+parked milestone never closes, so in PRD mode the queue does not advance
+past it — later phases build on earlier ones.)
 
 ## Context discipline (binding throughout)
 

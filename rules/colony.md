@@ -37,9 +37,12 @@ prefix is the packaging namespace, not part of the name.
   authored via `/hive:waggle --standalone <topic>`. Accepted repo-scoped
   ADRs bind **every** plan — `/hive:comb` passes them to the planner
   alongside the PRD's own ADRs.
-- **GitHub Issues are the execution layer**: one **milestone per goal**,
-  native **sub-issues** for the Epic → Task hierarchy, native **issue
-  dependencies** (`blocked by` / `blocking`) for the task DAG.
+- **GitHub Issues are the execution layer**: one **milestone per phase**
+  (one `/hive:comb` run = one plan.yaml = one milestone; a PRD may phase
+  into several milestones, tracked append-only in its `milestones:`
+  frontmatter list — see `hive:writing-prds`), native **sub-issues** for
+  the Epic → Task hierarchy, native **issue dependencies**
+  (`blocked by` / `blocking`) for the task DAG.
   No GitHub Projects — keep it simple.
 - **`/hive:bumble <PRD-id> [--yolo]` autopilots the lifecycle for one
   approved PRD** — it derives the current phase from the artifacts and
@@ -94,7 +97,8 @@ Doc IDs stay standard: PRD / RES / ADR / PLAN.
 
   The `· **ADR:** ...` segment is omitted when no ADR constrains the task.
 
-- **Doc → Issues**: PRD frontmatter gets `milestone` + `epic_issue` at
+- **Doc → Issues**: the PRD frontmatter's `milestones:` list gets its phase
+  entry (`plan`, `milestone`, `epic_issue`, `status`) appended at
   `/hive:comb` materialization.
 - **ADRs are append-only**: never edit an accepted ADR's decision —
   supersede it via `/hive:waggle`.
@@ -151,8 +155,13 @@ it is **never read for routing or resume** — the artifacts remain the state.
   `adr-accepted`, `adr-rejected`, `plan-approved`, `plan-declined`,
   `pause-resolved`), every `--yolo` auto-accept (same event names,
   `by: yolo`), and every doc status flip (`res-answered`, `plan-reviewed`,
-  `plan-materialized`, `prd-planned`, `prd-implemented`, `adr-superseded`).
-  Halts, errors, and retries are **not** logged.
+  `plan-materialized`, `prd-planned`, `milestone-implemented`,
+  `prd-implemented`, `adr-superseded`). Halts, errors, and retries are
+  **not** logged. Phase-scoped events carry their lineage in the fixed
+  fields: `prd-planned · PRD-NNN · plan: PLAN-NNN; milestone: <n>`;
+  `milestone-implemented · PLAN-NNN · prd: PRD-NNN; milestone: <n>`;
+  `prd-implemented · PRD-NNN · plans: PLAN-NNN[, PLAN-NNN…]` fires **only**
+  when the PRD's derived status flips to implemented.
 - **Research-assumption acceptances are exempt** — they are recorded by the
   RES doc's Assumptions Log markers (`accepted … by human|yolo`), not as their
   own audit events; the `res-answered` entry's `detail` lists the accepted ids

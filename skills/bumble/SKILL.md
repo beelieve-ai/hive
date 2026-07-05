@@ -15,8 +15,10 @@ The **colony rules bind every step** exactly as they bind the phases you drive.
 Ground rules that bind the whole run:
 
 - **There is NO state file — the artifacts ARE the state.** Doc `status:`
-  frontmatter, PRD frontmatter (`adrs:`, `milestone:`), the plan.yaml, and the
-  milestone marker together encode where the lifecycle stands. Re-running
+  frontmatter, PRD frontmatter (`adrs:`, the `milestones:` phase list — legacy
+  singular `milestone:`/`epic_issue:` read as a one-entry list), the
+  plan.yamls, and the milestone marker together encode where the lifecycle
+  stands. Re-running
   `/hive:bumble PRD-NNN` after any interruption resumes for free, because you
   re-derive the phase from those artifacts every time — never from memory of a
   prior run.
@@ -66,8 +68,10 @@ At each phase entry, **Read `<root>/skills/<phase>/SKILL.md` FRESH** — never
 execute a phase from memory or from a summary, always from the file on disk,
 because the procedure text is load-bearing and you must follow it verbatim.
 Execute that procedure with **`$ARGUMENTS` bound**: the **PRD id** for forage,
-waggle, and comb; the **milestone NUMBER** from the PRD's `milestone:`
-frontmatter for swarm.
+waggle, and comb; for swarm, the **milestone NUMBER** of the **earliest
+`milestones:` entry with `status != implemented`** — bumble hands swarm one
+milestone at a time, in phase order, and repeats swarm for the next open
+entry until none remain.
 
 ## Step 3 — Routing
 
@@ -81,11 +85,11 @@ never reproduce a phase's own trigger logic.
 |---|---|
 | PRD glob → 0 or >1 matches | **HALT** — report the candidates found |
 | `status:` missing or any value not listed below | **HALT** — unknown lifecycle state, report it |
-| >1 plan.yaml with `prd:` matching | **HALT** — report the candidate plans |
+| >1 **non-materialized** (`draft`/`reviewed`) plan.yaml with `prd:` matching | **HALT** — report the candidate plans (phases are planned one at a time; multiple *materialized* plans are legitimate phases, not a halt) |
 | `status: draft` | **HALT** — approve the PRD first (pollinate stays interactive), then re-run bumble |
-| `status: implemented` | **DONE** — final report, nothing to do |
+| `status: implemented` | **DONE** — final report, nothing to do (derived status: every `milestones:` entry is implemented; bumble never plans a new phase — that is `/hive:comb --new-phase`, a human act) |
 | `status: planned`, no plan.yaml with `prd:` matching | **HALT** — inconsistent state, report it |
-| `status: planned` + plan.yaml | **comb** first (its Step 0 verifies the marker AND pushed write-backs, finishing 4.6/4.7 idempotently) → then **swarm** |
+| `status: planned` + plan.yaml(s) | **comb** first (its Step 0 repairs/adopts interrupted materializations idempotently) → then **swarm**, once per open `milestones:` entry in phase order |
 | `status: approved` + plan.yaml | **comb** (resumes draft/reviewed/materialized) → then **swarm** |
 | `status: approved`, no plan.yaml | **forage** → **waggle** → **comb** → **swarm** |
 
@@ -105,11 +109,13 @@ Two guards wrap the cascade:
 - **Pre-comb validation**: every id in the PRD's `adrs:` frontmatter list must
   resolve to a doc with `status: accepted`. Any `proposed` or `superseded` id
   → **HALT with a report** — comb would abort on it anyway.
-- **Pre-swarm postcondition**: before entering swarm, confirm the PRD is
-  `planned`, the plan is `materialized`, the milestone marker
-  `plan-review: passed` is present, and the write-backs are pushed (these are
-  comb's own Step 0 checks). Only then enter swarm; swarm completes → PRD
-  becomes `implemented` → **DONE**.
+- **Pre-swarm postcondition**: before entering swarm for a phase, confirm the
+  PRD is `planned`, that phase's plan is `materialized` and represented by a
+  `milestones:` entry, its milestone marker `plan-review: passed` is present,
+  and the write-backs are pushed (these are comb's own Step 0 checks). Only
+  then enter swarm with that entry's milestone number; when swarm has closed
+  the last open entry the PRD's derived status becomes `implemented` →
+  **DONE**.
 
 **Postconditions are END-STATE checks, never diff-appeared checks.** A phase's
 legitimate no-op — nothing to research, zero ADR-worthy candidates, plan
@@ -143,11 +149,15 @@ automatically after each verdict**; you relay the decision and move on.
    is **one call per assumption**, so **N assumptions = N auto-accepts**, each
    listed separately in the run report.
 
-**Scope: ONLY artifacts created during THIS run.** Plan provenance is
-self-encoded by routing — **no plan.yaml at entry means comb drafts the plan
-fresh this run, so it is auto-approvable; a pre-existing plan.yaml (or a
-pre-existing `proposed` ADR) is ALWAYS posed to the human even under
-`--yolo`**, so a plan a human once Declined is never silently materialized.
+**Scope: ONLY artifacts created during THIS run.** Plan provenance is a
+**per-plan snapshot at run entry**: before routing, glob
+`docs/plans/PLAN-*.yaml` and record the PLAN-NNN ids that exist. **A plan
+whose id is in that snapshot is ALWAYS posed to the human even under
+`--yolo`; only a plan drafted during this run (its id absent from the
+snapshot) is auto-approvable** — so a plan a human once Declined is never
+silently materialized, while a PRD's historical implemented phases don't
+force a spurious gate on a phase drafted this run. (A pre-existing
+`proposed` ADR is likewise always posed to the human.)
 ADR provenance is a **snapshot at waggle entry**: before executing waggle,
 glob `docs/adr/ADR-*.md` and record the ids whose `status:` is `proposed` —
 any acceptance gate for an id in that snapshot goes to the human; only ids

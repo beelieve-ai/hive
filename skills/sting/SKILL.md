@@ -156,7 +156,7 @@ trade-off.
 
 | Artifact | What `/hive:sting` may edit (after agreement) | Never |
 |---|---|---|
-| PRD (any status) | Wording, acceptance criteria, Goals/Non-Goals, Open Questions; new requirements at the **next free** `R<n>`; a dropped requirement becomes a "Withdrawn: <reason>" body under its kept heading | Flip `status:`; renumber/reuse `R<n>` anchors; touch `milestone:`/`epic_issue:`; redraft from scratch |
+| PRD (any status) | Wording, acceptance criteria, Goals/Non-Goals, Open Questions; new requirements at the **next free** `R<n>`; a dropped requirement becomes a "Withdrawn: <reason>" body under its kept heading | Flip `status:`; renumber/reuse `R<n>` anchors; touch the `milestones:` list (or legacy `milestone:`/`epic_issue:` fields); redraft from scratch |
 | RES doc | Wording of questions/findings; sharpen evidence phrasing | Flip `status:`; invent findings the evidence does not carry; change provenance tags, confidence ratings, or acceptance markers (written only by scouts / the forage gate) |
 | ADR `proposed` | Freely editable per `writing-adrs` — context, drivers, options, wording | Flip `status:` (acceptance belongs to `/hive:waggle`) |
 | ADR `accepted` / `superseded` | **Nothing.** Offer a superseding `/hive:waggle` run instead | Any edit at all |
@@ -164,10 +164,11 @@ trade-off.
 | plan.yaml `materialized` | Same wording-only scope, **with a warning**: docs are intent, issues are execution — the edit will *not* propagate to the already-created GitHub issues | `issue:` numbers, task keys, structure, status |
 | Free-form design note | Anything, after agreement | — |
 
-If the PRD's status is `planned` or `implemented`, also warn that
-sharpened requirements do not retro-sync into existing issues (docs =
-intent; issues sync only at `/hive:comb` materialization and `/hive:swarm`
-completion).
+If the PRD's status is `planned` or `implemented` (both derived from its
+`milestones:` list — see `hive:writing-prds`), also warn that sharpened
+requirements do not retro-sync into existing issues (docs = intent; issues
+sync only at `/hive:comb` materialization and `/hive:swarm` completion) —
+though a later `/hive:comb --new-phase` plans against the sharpened text.
 
 ## 7. Wrap-up
 
