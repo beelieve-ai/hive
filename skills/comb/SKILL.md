@@ -120,7 +120,9 @@ reviewer round; the cap of **3 total** includes the first round.
 3. **Aggregate**: overall pass = all three verdicts are `"pass"`.
 4. **On overall pass** → Edit the plan.yaml frontmatter:
    `review: passed`, `reviewed_by: [context, dag, sizing]`,
-   `reviewed_at: <today, YYYY-MM-DD>`, `status: reviewed`. Go to Step 3.
+   `reviewed_at: <today, YYYY-MM-DD>`, `status: reviewed`, and append a
+   `plan-reviewed` entry (subject: PLAN-NNN) to the PRD's audit log per the
+   colony `Audit log` section. Go to Step 3.
 5. **On fail** — if the iteration counter is already 3, **abort with a
    report**: list every outstanding finding grouped by task key and by
    reviewer, leave the plan at `status: draft`, and stop. Otherwise:
@@ -171,6 +173,15 @@ the colony carve-out — record it as approved without posing the question;
 a plan that already existed when the bumble run started is always posed to
 the human.
 
+Record the verdict in the PRD's audit log (colony `Audit log` section):
+`plan-approved` (`by: human`, or `by: yolo` under the carve-out) or
+`plan-declined`, subject: PLAN-NNN. On a resume that re-poses this gate,
+skip the append when the log already records that verdict. An approval's
+entry rides the Step 4.2 commit; a Decline commits the audit log
+**together with the reviewed plan.yaml** (sync main first per
+`gh-conventions`, then push) before stopping — never split the entry from
+the plan it records.
+
 ## Step 4 — Materialize (only after approval; resumable and IDEMPOTENT)
 
 A partial failure (rate limit, network, crash) must **never** duplicate
@@ -220,8 +231,8 @@ links 404 unless the docs are on the default branch first. So, before the first
 
 1. `git switch main && git pull --ff-only origin main` (never commit on a
    stale main).
-2. Commit the reviewed plan.yaml (and the PRD if its file changed), e.g.
-   `docs(plans): add PLAN-NNN for $ARGUMENTS`.
+2. Commit the reviewed plan.yaml, the PRD's audit log, and the PRD if its
+   file changed, e.g. `docs(plans): add PLAN-NNN for $ARGUMENTS`.
 3. `git push origin main`. If the push fails, stop and report — do not
    create issues against unpushed docs.
 
@@ -305,6 +316,8 @@ After **all** tasks have issue numbers:
 1. plan.yaml: `status: materialized`.
 2. PRD frontmatter: `milestone: <milestone-number>` (the number from 4.1,
    not an issue number), `epic_issue: <epic#>`, `status: planned`.
+3. Append `plan-materialized` (subject: PLAN-NNN) and `prd-planned`
+   (subject: the PRD id) entries to the PRD's audit log.
 
 Note: `status: materialized` alone does not mean the run finished —
 steps 4.6 and 4.7 still follow, and Step 0 item 3's materialized branch
@@ -328,7 +341,8 @@ milestone is refused.
 
 Sync main again if anything was merged meanwhile
 (`git switch main && git pull --ff-only origin main`), then commit the
-write-backs (plan.yaml issue numbers + status, PRD frontmatter), e.g.
+write-backs (plan.yaml issue numbers + status, PRD frontmatter, audit
+log), e.g.
 `docs(plans): materialize PLAN-NNN into milestone <title>`, and
 `git push origin main`.
 

@@ -82,7 +82,7 @@ Also repair the Accept-path crash window: any `status: accepted` ADR with
 `derived-from:` this PRD whose id is missing from the PRD's `adrs:`
 frontmatter list means a prior run was interrupted mid-Accept — append the
 id now and re-run the remaining step-7 Accept bookkeeping (supersede flip,
-bedrock digest sync) for it; all of it is idempotent.
+bedrock digest sync, audit-log append) for it; all of it is idempotent.
 
 PRD run: from the PRD (requirements, Open Questions, body) and the accepted
 research findings, list the candidate architecture decisions — each phrased
@@ -225,6 +225,12 @@ considered alternative ("Accept <other option> instead"), then
   pending`) — in the PRD's Open Questions, or in `docs/adr/DECISIONS.md`
   for a standalone run.
 
+**Whatever the verdict, append it to the PRD's audit log** per the colony
+`Audit log` section: `adr-accepted` (detail: the chosen option) or
+`adr-rejected` (detail: proposed, pending); a supersede additionally gets
+an `adr-superseded` entry for the old id (detail: superseded by the new
+id). Standalone runs have no parent PRD and no audit log — skip this.
+
 An accepted ADR is final. If the user later changes their mind, the answer
 is a **new** `/hive:waggle` run that supersedes it — never an edit.
 
@@ -234,8 +240,8 @@ Sync main first per the `gh-conventions` skill (`git switch main && git pull
 --ff-only origin main`) — never commit on a stale main. Then commit all of
 this run's doc changes together: new ADR files, the PRD frontmatter/Open
 Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), any
-`superseded` flips, plus the `ARCHITECTURE.md` and `CLAUDE.md` bedrock
-updates from step 7. Conventional commit, e.g.:
+`superseded` flips, the PRD's audit log entries from step 7, plus the
+`ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from step 7. Conventional commit, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003
