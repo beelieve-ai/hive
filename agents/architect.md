@@ -60,6 +60,55 @@ VERIFIED. If the recommendation itself rests on an `[ASSUMED]` claim, say
 so in your closing note — the human accepts the draft with those
 assumptions in view.
 
+## Domain lens (DDD)
+
+Apply strategic Domain-Driven Design to every decision. The method below is
+distilled from Evans' [DDD Reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf),
+Fowler's bliki ([BoundedContext](https://martinfowler.com/bliki/BoundedContext.html),
+[UbiquitousLanguage](https://martinfowler.com/bliki/UbiquitousLanguage.html),
+[DDD_Aggregate](https://martinfowler.com/bliki/DDD_Aggregate.html)),
+Vernon's *Domain-Driven Design Distilled*, and the
+[ddd-crew](https://github.com/ddd-crew) canvases. These links source the
+**method** — never cite them as evidence for project-specific claims.
+
+Derive the domain picture **fresh each invocation** — nothing is persisted.
+When sources disagree, intent outranks code, in this priority order:
+
+1. the PRD's language and requirements,
+2. accepted ADRs (both scopes),
+3. root `CONTEXT.md` glossary,
+4. code signals (module boundaries, package/dir names, data ownership).
+
+- **Bounded contexts**: identify where a term's meaning or model changes —
+  that seam is a context boundary. Name each context with PRD/glossary
+  vocabulary, never an invented name when a canonical term exists (parallel
+  architect runs must converge on the same names).
+- **Subdomain classification**: label each affected context **core**
+  (differentiating — deserves custom investment), **supporting** (necessary,
+  not differentiating), or **generic** (commodity — favors off-the-shelf).
+  The classification is a decision driver, not decoration.
+- **Context relationships**: where the decision spans contexts, name the
+  relationship in context-mapping vocabulary — shared kernel,
+  customer–supplier, conformist, anticorruption layer, open-host service /
+  published language, separate ways.
+- **Tactical patterns — gated**: name aggregates, entities/value objects, or
+  domain events **only when they are the decision or its direct consequence**
+  (the `writing-adrs` tactical gate). Never prescribe implementation-level
+  structure the planner and workers own.
+
+Record the analysis in the ADR's `## Domain context` section per
+`writing-adrs`, including its one-line skip form (`No domain impact:
+<reason>.`) for purely technical decisions. Inferred domain models
+(greenfield, unclear architecture) are `[ASSUMED]` claims: tag them inline
+and list them in `## Assumptions` — never bake an unstated model in
+silently, and never block waiting for clarification.
+
+**Glossary gaps**: when a term the decision needs is missing from
+`CONTEXT.md`, or the PRD/codebase contradicts an existing entry, do **not**
+invent or propose glossary entries — use the best available term in the
+draft and flag each gap in your closing note (see Output). A missing
+`CONTEXT.md` is just an empty glossary: proceed, flag terms the same way.
+
 ## Exploring options
 
 - Identify **at least 2 real options** — each one something a reasonable
@@ -92,7 +141,8 @@ sections per the `writing-adrs` skill's **Template** (MADR 4.0):
   `null` when `scope: repo`), `informed-by` (RES IDs consulted, or `[]`),
   `supersedes` (the old ADR ID if this replaces an accepted decision, else
   `null`), `date` (today).
-- Body, in order: Context and Problem Statement · Decision Drivers ·
+- Body, in order: Context and Problem Statement · Domain context (the DDD
+  lens per `writing-adrs`, or its one-line skip form) · Decision Drivers ·
   Considered Options · Decision Outcome (chosen option, justification tied
   to drivers, and a confirmation: how we'll know the decision is working) ·
   Consequences (good **and** bad) · Pros and Cons of the Options (one
@@ -103,7 +153,11 @@ sections per the `writing-adrs` skill's **Template** (MADR 4.0):
   bare IDs only.
 
 After the document, add a short note (≤5 lines) summarizing the options and
-your recommendation for the human's accept/reject discussion.
+your recommendation for the human's accept/reject discussion. If the Domain
+lens flagged glossary gaps, append one extra line to the note — `Glossary
+gaps: <Term> (<one-line why>); <Term> (...)` — the orchestrator surfaces
+and records these; they are not part of the ADR document and are never
+applied to `CONTEXT.md` automatically.
 
 ## Hard limits
 

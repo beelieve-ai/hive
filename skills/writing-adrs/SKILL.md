@@ -49,17 +49,21 @@ Frontmatter per the template: `id`, `status`, `scope` (`prd` | `repo`),
 
 1. **Context and Problem Statement** — the forces at play and the question
    being decided, phrased neutrally (ideally as a question).
-2. **Decision Drivers** — the criteria that matter, as a bulleted list.
+2. **Domain context** — the DDD lens on the decision, always at this fixed
+   position (immediately after Context and Problem Statement); see the
+   **Domain context (DDD)** section below for its content rules and its
+   mandatory one-line skip form.
+3. **Decision Drivers** — the criteria that matter, as a bulleted list.
    These are what the options get judged against.
-3. **Considered Options** — a short list naming each option.
-4. **Decision Outcome** — "Chosen option: <X>, because <justification tied
+4. **Considered Options** — a short list naming each option.
+5. **Decision Outcome** — "Chosen option: <X>, because <justification tied
    to the drivers>." Include confirmation: how we will know the decision is
    working (a measurement, a review point).
-5. **Consequences** — good and bad, honestly. Every decision has a "bad"
+6. **Consequences** — good and bad, honestly. Every decision has a "bad"
    consequence; if you can't name one, the trade-off leg of the worthiness
    test probably failed.
-6. **Pros and Cons of the Options** — one subsection per option.
-7. **Assumptions** — one bullet per inline `[ASSUMED]` claim, each with
+7. **Pros and Cons of the Options** — one subsection per option.
+8. **Assumptions** — one bullet per inline `[ASSUMED]` claim, each with
    what would verify it; the bare line `None.` (no bullet) when there are
    none. Always present in new drafts — `/hive:waggle` validates inline
    `[ASSUMED]` tags against this section.
@@ -91,6 +95,40 @@ repo-relative link.
   upgrades never). Every `[ASSUMED]` claim repeats as a bullet in the
   ADR's `## Assumptions` section, which is always present (`None.` when
   empty).
+
+## Domain context (DDD)
+
+Every ADR carries a `## Domain context` section, fixed in position right
+after Context and Problem Statement. It applies strategic Domain-Driven
+Design to the decision; the drafting method lives in the architect agent —
+this section defines what the document must contain.
+
+- **Content**: the bounded contexts / subdomains the decision touches
+  (each classified core / supporting / generic), and — where the decision
+  spans contexts — their relationships in context-mapping vocabulary
+  (shared kernel, customer–supplier, conformist, anticorruption layer,
+  open-host service / published language, separate ways). A few sentences or bullets; this is
+  decision-altitude analysis, not a modeling workshop.
+- **Derived fresh, intent first.** The domain picture is re-derived at
+  drafting time from, in priority order: the PRD → accepted ADRs → root
+  `CONTEXT.md` glossary → code signals. Intent documents outrank code;
+  nothing is persisted as a separate context-map artifact (`CONTEXT.md`
+  stays glossary-only, `ARCHITECTURE.md` stays a derived digest).
+- **Skip rule**: a decision with no domain impact (CI provider, build
+  system, toolchain policy) collapses the section to exactly one stated
+  line — `No domain impact: <reason>.` — never silently omitted.
+- **Tactical gate**: tactical patterns (aggregates, entities/value
+  objects, domain events) appear **only when they are the decision or its
+  direct consequence** — e.g. an ADR choosing event-driven integration
+  names the domain events crossing the boundary; an ADR choosing a
+  consistency boundary names the aggregate it draws. Otherwise the section
+  stays strategic: ADRs must not prescribe implementation-level structure
+  the planner and workers own.
+- **Inferred models are assumptions**: where the domain picture was
+  inferred rather than stated (greenfield repo, unclear architecture), tag
+  those inferences `[ASSUMED, confidence: LOW]` inline and list them in
+  `## Assumptions` like any other unverified claim — the acceptance gate
+  sees them.
 
 ## Diagrams
 
@@ -192,6 +230,16 @@ date: YYYY-MM-DD
 ## Context and Problem Statement
 
 <What is the issue we are deciding on, and why does it need a decision?>
+
+## Domain context
+
+<!-- Strategic DDD lens per the "Domain context (DDD)" section: bounded
+     contexts / subdomains touched (core / supporting / generic) and their
+     relationships; tactical patterns only when decision-relevant. For a
+     decision with no domain impact, exactly one line:
+     "No domain impact: <reason>." -->
+
+<bounded contexts / subdomains this decision touches, or the one-line skip>
 
 ## Decision Drivers
 

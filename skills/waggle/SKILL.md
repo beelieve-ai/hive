@@ -193,7 +193,9 @@ For each returned draft, before writing:
   ≥ 2 real options; if the draft is structurally incomplete, re-invoke that
   architect once with the specific gap named. Still incomplete ⇒ report the
   failure to the user and drop that candidate from this run (do not write a
-  broken ADR).
+  broken ADR). The `## Domain context` section counts as present in its
+  one-line skip form (`No domain impact: <reason>.`) — that is valid, not
+  incomplete; a missing or empty Domain context section is a gap.
 - Verify **provenance**: every web-sourced claim in option prose carries an
   inline tag + confidence in the pinned format
   (`[VERIFIED: <source>, confidence: <RATING>]` /
@@ -273,7 +275,12 @@ considered alternative ("Accept <other option> instead"), then
 `Audit log` section: `adr-accepted` (detail: the chosen option) or
 `adr-rejected` (detail: proposed, pending); a supersede additionally gets
 an `adr-superseded` entry for the old id (detail: superseded by the new
-id). Standalone runs have no parent PRD and no audit log — skip this.
+id). If the architect's note flagged glossary gaps, append them to the
+entry's detail field now, at entry-creation time (entries are append-only,
+never edited later): `option: <chosen>; glossary gaps: TermA, TermB` —
+terms only, comma-separated. This is how `/hive:comb` later finds
+unresolved gaps. Standalone runs have no parent PRD and no audit log —
+skip this (their gaps surface in the step-9 report only).
 
 An accepted ADR is final. If the user later changes their mind, the answer
 is a **new** `/hive:waggle` run that supersedes it — never an edit.
@@ -299,7 +306,13 @@ command produces documents only. (`/hive:comb` pushes docs before materializing.
 
 End with a short summary: accepted ADRs (id + chosen option), proposed-but-
 undecided ADRs, worthiness-rejected candidates with where their rationale
-was recorded, and any superseded ADRs. Note when the run created or updated
+was recorded, and any superseded ADRs. List every **glossary gap** the
+architects flagged (term + why), with the pointer that gaps are settled via
+`/hive:sting` or a grilling session — never applied automatically. This
+reporting is identical under a `--yolo` run: gaps are reported, never
+auto-applied. For a PRD run the gaps are also in the audit log and
+`/hive:comb` will raise a tracking issue for any still unresolved; for a
+standalone run this report is their only surfacing. Note when the run created or updated
 `ARCHITECTURE.md`, and — especially — when it touched the user's `CLAUDE.md`
 (the only write outside `docs/`): surface that edit explicitly. For a PRD run, suggest
 `/hive:comb <PRD-id>` as the next step when the PRD's decision surface is

@@ -425,10 +425,32 @@ log), e.g.
 `docs(plans): materialize PLAN-NNN into milestone <title>`, and
 `git push origin main`.
 
+### 4.8 Glossary-gaps tracker (idempotent)
+
+Audit logs are append-only provenance with no "resolved" event, so
+resolution is **computed**, never recorded:
+
+1. Read `docs/audit/<PRD-ID>-audit.md` and collect every term from
+   `glossary gaps: ...` lists in entry detail fields (comma-separated
+   terms, per `/hive:waggle`). No such lists → skip this step entirely.
+2. Drop every collected term that now has a `## <Term>` entry in root
+   `CONTEXT.md` — the glossary itself is the resolution ground truth.
+   Compare normalized per the gh-conventions tracker section
+   (case-insensitive, trimmed, singular/plural folded). A missing
+   `CONTEXT.md` resolves nothing.
+3. Reconcile the tracker issue per the **Glossary-gaps tracker issue**
+   section of `hive:gh-conventions` (exact title `Glossary gaps:
+   <PRD-ID>`, label `glossary`, no `hive:managed`, this milestone):
+   unresolved terms remain → create it, or update the body and reopen if
+   closed; unresolved set empty → close an open tracker. This issue is a
+   reminder for `/hive:sting` / grilling — comb never edits `CONTEXT.md`.
+
 ## Final report
 
 Print: the plan id and path, review iterations used, milestone title and
 **milestone number**, epic issue number, a `task key → issue #` table in
-creation order, and the follow-up command:
+creation order, the glossary-gaps tracker state if step 4.8 touched it
+(issue number + unresolved terms, and that they are settled via
+`/hive:sting` or a grilling session), and the follow-up command:
 `/hive:swarm <PRD-id>` (runs every remaining phase in order; pass the
 milestone title or number instead to run just this one).
