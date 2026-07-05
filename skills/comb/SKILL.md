@@ -133,6 +133,18 @@ Pass the resolved model as the `model` parameter on the Agent call. Never
 hard-fail the command over model config — a warning plus frontmatter fallback
 is always the correct degradation.
 
+### Worker tier for plan calibration
+
+Once per run, additionally resolve the **worker** role's model with the same
+rules and classify the implementor tier: a haiku-class name → `weak`;
+`sonnet`/`opus`/`fable` → `strong`; resolution failed or name unrecognized →
+`weak` (the safe default — worst case is an overly explicit plan). For an
+unrecognized name in an interactive session, you may confirm the tier via
+AskUserQuestion instead of silently defaulting. Pass the resolved worker
+model and tier to the planner in Step 1.2; the planner records them in the
+plan's `calibration:` block and calibrates task-body explicitness per the
+`hive:decomposition` skill's **Calibration and weak-mode anatomy** section.
+
 ## Step 1 — Draft the plan
 
 1. Allocate the plan id: glob `docs/plans/PLAN-*.yaml`, take the highest
@@ -140,7 +152,9 @@ is always the correct degradation.
    IDs are append-only, never reused.
 2. Spawn the **planner** agent (Agent tool, subagent_type `hive:planner`)
    with: the PRD path, the list of
-   accepted ADR paths (possibly empty), and the allocated PLAN-NNN id.
+   accepted ADR paths (possibly empty), the allocated PLAN-NNN id, and the
+   worker model + implementor tier from **Worker tier for plan
+   calibration**.
    The planner returns the complete plan.yaml as a single fenced ```yaml
    block — it never writes files.
 3. Extract that YAML block and write it to
@@ -148,7 +162,8 @@ is always the correct degradation.
    the plan's `milestone_title`). Sanity-check before proceeding:
    `status: draft`, `review: null`, `prd:` matches `$ARGUMENTS`, a
    non-empty `milestone_verification.command` is present (the sizing
-   reviewer additionally judges its quality), every
+   reviewer additionally judges its quality), a `calibration:` block with
+   the tier you passed is present, every
    task has `issue: null`, and every task body starts with the
    crosslinking header block (`**PRD:** ...` with full
    `https://github.com/<owner>/<repo>/blob/<default-branch>/...` URLs built

@@ -1,6 +1,6 @@
 ---
 name: decomposition
-description: Task decomposition rules for Hive plans — sizing heuristics (one task per fresh-context agent session, 2–5 files), the self-containedness checklist for task bodies, DAG design with explicit depends_on edges and honest parallel_ok, and the mandatory runnable Verification section.
+description: Task decomposition rules for Hive plans — sizing heuristics (one task per fresh-context agent session, 2–5 files), the self-containedness checklist for task bodies, calibration-aware weak-mode task anatomy (Preflight/Goal/Files/Changes), DAG design with explicit depends_on edges and honest parallel_ok, and the mandatory runnable Verification section.
 ---
 
 # Decomposition
@@ -23,6 +23,12 @@ to pass them the first time.
   model first, then consumer; not "first half of the function, second half").
 - Do not merge trivially small tasks just to reduce count — a small,
   well-verified task is cheaper than an entangled one.
+- **Vertical slices — every task ends green.** After any task's verification
+  passes, the repo builds, tests pass, and the functionality delivered so
+  far demonstrably works end to end. No task may leave the system broken
+  for a later task to repair — split along seams that keep this true.
+  Granularity serves verifiability, never ceremony: don't pad steps to
+  look thorough.
 
 ## Self-containedness checklist
 
@@ -42,6 +48,35 @@ all of the following:
   (file path, shape, contract) *and* add the dependency edge.
 - [ ] **Acceptance criteria** — measurable, checkable statements of done.
 - [ ] **Verification section** — see below.
+
+## Calibration and weak-mode anatomy
+
+Every plan carries a top-level `calibration:` block recording the worker
+model and implementor tier the orchestrator resolved (`weak` or `strong`;
+unresolved → `weak`). Task-body explicitness is calibrated to it: a weak
+implementor executes instructions — it cannot reliably infer intent,
+recover from a false premise, or debug a broken intermediate state.
+
+In **weak** mode, every task's `## Context` section contains, in order,
+these `###` subsections:
+
+- **Preflight** — the assumptions this task rests on that the planner could
+  not fully verify at planning time. Each entry: the assumption plus one
+  check command meeting the Verification bar (repo-root runnable, headless,
+  self-asserting — exit code decides). The list ends with the literal line
+  **"If any check fails: stop and report — do not improvise."** Write
+  `Preflight: none` when everything was verified during planning. Preflight
+  is the unresolvable residue — never a dumping ground for facts the
+  planner could have checked itself with Read/Grep/Glob.
+- **Goal** — one sentence: what this task makes true.
+- **Files** — the exact paths to create or modify, one per line.
+- **Changes** — a concrete description of each change. Short code snippets
+  only where a weak model would plausibly get it wrong (tricky APIs, exact
+  signatures, non-obvious idioms) — never full pre-written diffs; prose
+  naming the function, its shape, and its behavior is the default.
+
+In **strong** mode the subsections are optional; the self-containedness
+checklist above binds in full either way.
 
 A task's `## Context` block may embed a ```` ```mermaid ```` fenced
 diagram when the flow or data shape is easier shown than told — GitHub
@@ -139,6 +174,9 @@ status: draft | reviewed | materialized
 review: null            # set to "passed" by /hive:comb after all three reviewers pass
 reviewed_by: []
 reviewed_at: null
+calibration:
+  worker_model: haiku    # resolved by /hive:comb from models.yaml / .hive/models.yaml
+  tier: weak             # weak | strong — unresolved defaults to weak
 milestone_title: ...
 milestone_verification:
   command: ...           # self-asserting, repo-root runnable; /hive:swarm runs it on main after every merge
@@ -155,7 +193,9 @@ tasks:
     parallel_ok: true
     body: |
       ## Context
-      <self-contained: concrete file paths, conventions, links>
+      <self-contained: concrete file paths, conventions, links.
+       weak tier: the ### Preflight / ### Goal / ### Files / ### Changes
+       subsections per "Calibration and weak-mode anatomy">
       ## Acceptance criteria
       - ...
       ## Verification
