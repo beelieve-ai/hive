@@ -8,7 +8,9 @@ description: Exact gh commands for the Hive lifecycle — milestones via the RES
 Exact `gh` commands for this system. Verified against **gh 2.96.0** — do not
 substitute flags from memory. Ground rule: all `gh` automation reads state via
 `--json`; the single sanctioned exception is documented below (issue/PR number
-capture). All issues created by the system carry the `hive:managed` label.
+capture). All issues created by the system carry the `hive:managed` label —
+sole exception: the **glossary-gaps tracker** (see its section below), which
+deliberately omits it so `/hive:swarm` ignores the issue.
 
 ## Resolving the current repo (portability)
 
@@ -188,6 +190,36 @@ gh issue view <n> --json number,title,issueType,milestone,parent,labels,blockedB
 Confirm type (native mode) or `type:*` label (label mode), milestone, parent,
 labels, and blockedBy all match what was requested. This exception applies **only** to number capture from these two
 create commands; every other read stays `--json`.
+
+## Glossary-gaps tracker issue (the one non-managed system issue)
+
+`/hive:comb` maintains at most **one** tracker issue per PRD for glossary
+terms flagged by architects but not yet settled in root `CONTEXT.md`. It is
+a reminder, not work for the build loop, hence its deliberate exceptions:
+
+- **Title (the dedup key)**: exactly `Glossary gaps: <PRD-ID>` (e.g.
+  `Glossary gaps: PRD-003`). Never vary it — lookup is by exact title.
+- **Labels**: `glossary` only — ensure it exists first
+  (`gh label create glossary --force`). **No `hive:managed`** (the
+  documented exception to the ground rule above: an unparented
+  `hive:managed` issue in a milestone makes `/hive:swarm` abort) and no
+  `type:*` label — the tracker is neither epic nor task.
+- **Milestone**: the PRD's milestone.
+- **Lookup before create** — across open AND closed issues:
+  `gh issue list --milestone "<title>" --state all --label glossary --json number,title,state`,
+  match the exact title. Multiple matches → abort and report.
+- **Body**: one markdown checklist line per unresolved term —
+  `- [ ] <Term> — <one-line why>`. On re-runs, **replace the body** with
+  the current unresolved set and add one comment noting the delta (terms
+  added/resolved since last run); skip the comment when nothing changed.
+- **Term matching is normalized**: compare terms case-insensitively,
+  whitespace-trimmed, singular/plural folded — applied identically to
+  audit-parsed terms and `CONTEXT.md` `## <Term>` headings, so case or
+  plural drift never duplicates a checklist item.
+- **Lifecycle**: closed tracker but unresolved terms remain → **reopen**
+  it (`gh issue reopen <n>`) and update; unresolved set empty → close it
+  (`gh issue close <n>`). Humans may also close it manually; the next
+  comb run corrects state either way.
 
 ## Branch / PR flow
 
