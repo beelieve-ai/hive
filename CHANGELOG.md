@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.5.0] — 2026-07-05
+
+### Added
+- `/hive:tremble [--all]` — mines this project's own Claude Code session
+  transcripts and hive audit logs for evidence of friction the hive system
+  itself caused, drafts sanitized upstream issues about those weaknesses, and —
+  only after per-issue approval — files them in `beelieve-ai/hive` (a
+  deliberately hardcoded target, exceptional vs. the current-repo resolution
+  lifecycle commands use). Four-layer sanitization (generic by construction,
+  deterministic redaction check, LLM pass, human verbatim gate) keeps
+  project-specific information — paths, names, code, quotes — on the machine;
+  `--all` forces a re-scan of already-analyzed sessions.
+- `tremble-analyzer` agent (spawned as `hive:tremble-analyzer`) — a read-only
+  per-session analyzer (Read/Grep/Glob) that returns structured, sanitized
+  findings against a fixed friction taxonomy plus a catch-all.
+
 ## [0.4.0] — 2026-07-05
 
 ### Added
@@ -28,6 +44,22 @@ authoritative version is the `version` field in
   applies, with a warning — model config never hard-fails a lifecycle command.
 - Agent frontmatter aligned to the `balanced` preset as the fallback tier:
   `planner`, `guard`, and `plan-reviewer-sizing` move `opus` → `sonnet`.
+
+## [0.3.0] — 2026-07-04
+
+_Backfilled — this version shipped in the manifest without a changelog entry._
+
+### Added
+- **Per-PRD audit log**: one append-only provenance file per PRD at
+  `docs/audit/PRD-NNN-audit.md` with a fixed one-line markdown schema, written
+  by the phase that owns each status write in the same commit. Records human
+  gate verdicts, `--yolo` auto-accepts, and doc status flips; exempt from the
+  docs=intent / issues=execution split and never read for routing. Canonical
+  term "audit log" added to the root `CONTEXT.md` glossary.
+
+### Fixed
+- Audit-log append instructions: review gaps closed (deterministic append
+  anchors and ownership).
 
 ## [0.2.0] — 2026-07-04
 

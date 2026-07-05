@@ -9,11 +9,15 @@ Installed as a plugin, every Hive command, skill, and agent is namespaced
 under `hive:`:
 
 - **Commands**: `/hive:pollinate`, `/hive:forage`, `/hive:waggle`,
-  `/hive:comb`, `/hive:swarm`, `/hive:sting`, `/hive:bumble`.
+  `/hive:comb`, `/hive:swarm`, `/hive:sting`, `/hive:bumble`. Outside the
+  lifecycle, `/hive:tremble [--all]` mines a project's own sessions and audit
+  logs for friction the hive itself caused and drafts sanitized upstream
+  feedback issues.
 - **Agents** (spawn by this exact `subagent_type`): `hive:scout`,
   `hive:worker`, `hive:guard`, `hive:architect`, `hive:planner`,
-  `hive:plan-reviewer-context` / `-dag` / `-sizing`. A **bare** agent name
-  does not resolve — always spawn the `hive:`-prefixed type.
+  `hive:plan-reviewer-context` / `-dag` / `-sizing`, `hive:tremble-analyzer`.
+  A **bare** agent name does not resolve — always spawn the `hive:`-prefixed
+  type.
 - **Skills** (load by this id): `hive:grilling`, `hive:writing-prds`, etc.
 
 The bee-themed names in the map below are the **logical** names; the `hive:`
@@ -57,6 +61,7 @@ old command, agent, or label names anywhere else.
 | `/swarm` | `/goal` | command |
 | `/sting` | — (new) | command |
 | `/bumble` | — (new) | command |
+| `/tremble` | — (new) | command |
 | `scout` | `researcher` | agent |
 | `worker` | `implementer` | agent |
 | `guard` | `code-reviewer` | agent |
@@ -65,6 +70,7 @@ old command, agent, or label names anywhere else.
 | `plan-reviewer-context` | unchanged | agent |
 | `plan-reviewer-dag` | unchanged | agent |
 | `plan-reviewer-sizing` | unchanged | agent |
+| `tremble-analyzer` | — (new) | agent |
 
 Doc IDs stay standard: PRD / RES / ADR / PLAN.
 
