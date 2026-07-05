@@ -108,6 +108,31 @@ Ground rules that bind every step:
    `blockedBy`). Tie-break by lowest issue number for determinism.
 4. If **no open tasks remain**, go to Step 5 (termination).
 
+## Model preset resolution
+
+Before spawning any agent below — including re-spawns and fix rounds — resolve
+its model from the Hive model config:
+
+1. Read `models.yaml` under the Hive plugin root (the `Hive plugin root:` path
+   injected at session start). Missing or unparseable → warn once, omit the
+   `model` param on all spawns (agent frontmatter defaults apply), and skip
+   the remaining steps.
+2. If `.hive/models.yaml` exists at the repo root, read it. Unparseable →
+   warn once and ignore it entirely; the plugin config still applies. It has
+   two optional flat keys: `active:` (preset switch) and `agents:`
+   (role → model pins).
+3. `active` = the project file's `active:` if set, else the plugin's.
+4. For each spawn, `<role>` = the agent name without the `hive:` prefix,
+   normalized so that any `plan-reviewer-*` agent maps to the single
+   `plan-reviewer` key (e.g. `hive:plan-reviewer-dag` → `plan-reviewer`).
+5. `model` = the project file's `agents.<role>` if set, else
+   `presets[active][<role>]` from the plugin config. Neither present →
+   warn and omit `model` for that spawn.
+
+Pass the resolved model as the `model` parameter on the Agent call. Never
+hard-fail the command over model config — a warning plus frontmatter fallback
+is always the correct degradation.
+
 ## Step 3 — Work one issue
 
 Let `<n>` be the selected issue number. Execute these sub-steps in order.
