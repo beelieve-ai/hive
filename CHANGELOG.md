@@ -6,6 +6,56 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.4.0] — 2026-07-05
+
+### Added
+- **Evidence provenance for research**: every Evidence citation in a RES doc
+  carries a claim tag — `[VERIFIED: <source>]` / `[CITED: <url>]` /
+  `[ASSUMED]` — and every Answer a confidence rating capped by its tags
+  (VERIFIED→up to HIGH; corroborated CITED→up to MEDIUM; single-source
+  CITED and ASSUMED→LOW; downgrades allowed, upgrades never).
+- **Assumptions Log** in the research template: stable per-doc `A<n>` ids
+  for every `[ASSUMED]` claim; a question relying on an unaccepted
+  assumption keeps its doc `status: open`.
+- **Assumption-acceptance gate** in `/hive:forage`: one AskUserQuestion per
+  blocking assumption (Keep-open recommended); acceptance is recorded by a
+  doc marker (`accepted YYYY-MM-DD by human|yolo`) and surfaces in the
+  `res-answered` audit detail at flip time. `/hive:bumble --yolo` now
+  auto-accepts only assumptions introduced during that run (entry
+  snapshot — pre-existing ones always go to the human), a third delegation
+  gate type alongside ADR acceptance and plan approval.
+- **Citation spot-check** in `/hive:forage` step 5: scout citations are
+  verified as content-free existence checks before persisting; a
+  non-resolving citation folds into the existing single re-dispatch.
+- `research-method` gains honest-reporting rules (negative-claim guard,
+  hedging tells), search hygiene, and confirmation/survivorship bias
+  counters with an explicit skip list for trivial lookups.
+
+### Changed
+- The scout agent runs on `model: opus` (was `sonnet`) and returns a
+  tightened, citation-only summary (no page dumps or tool transcripts) with
+  a bounded-search rule.
+- The research method is consolidated: `research-method` is the single
+  source of truth; `agents/scout.md` and `/hive:forage` now point at it
+  instead of restating search order, evidence rules, and done criterion.
+- `/hive:sting` RES-doc forbidden edits additionally cover provenance tags,
+  confidence ratings, and acceptance markers.
+- Colony ground rules: the `--yolo` carve-out covers three gate types; the
+  audit log documents the marker-based exemption for assumption
+  acceptances.
+
+## [0.3.0] — 2026-07-04
+
+### Added
+- **Per-PRD audit log** (`docs/audit/PRD-NNN-audit.md`): append-only
+  provenance of gate verdicts and doc status flips, one fixed-schema line
+  per event, written by the phase that owns the status write in the same
+  commit as the artifact.
+
+### Fixed
+- Audit-log append instructions hardened against review gaps (derived from
+  doc state on re-run, no double-logging, no empty logs).
+
 ## [0.2.0] — 2026-07-04
 
 ### Added

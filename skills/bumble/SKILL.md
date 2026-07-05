@@ -126,13 +126,18 @@ improvise** a fix.
 options, same recommendation, same wording. The cascade **continues
 automatically after each verdict**; you relay the decision and move on.
 
-**`--yolo` auto-accepts exactly two gate TYPES**, and only these two:
+**`--yolo` auto-accepts exactly three gate TYPES**, and only these three:
 
 1. **waggle step-7 per-ADR acceptance** → the recommended option
    (`Accept <chosen option>`). This is **one call per ADR**, so **N ADRs = N
    auto-accepts**, each listed separately in the run report.
 2. **comb Step 3 plan approval** → `Approve — materialize` (only reachable
    after all three plan reviewers passed).
+3. **forage research-assumption acceptance** → `Accept assumption`. Note this
+   is deliberately **NOT** the human-recommended `Keep open` option — unlike
+   the other two yolo gates, where the recommendation is what gets taken. This
+   is **one call per assumption**, so **N assumptions = N auto-accepts**, each
+   listed separately in the run report.
 
 **Scope: ONLY artifacts created during THIS run.** Plan provenance is
 self-encoded by routing — **no plan.yaml at entry means comb drafts the plan
@@ -143,6 +148,11 @@ ADR provenance is a **snapshot at waggle entry**: before executing waggle,
 glob `docs/adr/ADR-*.md` and record the ids whose `status:` is `proposed` —
 any acceptance gate for an id in that snapshot goes to the human; only ids
 absent from it (drafted this run) are auto-acceptable.
+Research-assumption provenance is a **snapshot at forage entry**, mirroring the
+ADR snapshot discipline: at forage entry record the unaccepted `A<n>` ids of
+the linked open RES docs — any acceptance gate for an id in that snapshot goes
+to the human; only assumptions introduced during this run (absent from the
+snapshot) are auto-acceptable.
 
 **Never auto-answered under any flag:** every swarm PAUSE, every error/halt
 report, comb's 3-iteration abort, waggle's incomplete-draft failure, every
@@ -200,7 +210,9 @@ When the run ends (DONE or halt), report:
 - You **never read code, diffs, or implementation files** — that detail lives
   in the worker, guard, scout, architect, planner, and reviewer subagent
   contexts that the phase procedures spawn. Your working memory is the routing
-  state and the accumulating run report.
+  state and the accumulating run report. **Carve-out:** phase-mandated
+  existence checks (e.g. forage's citation spot-check) are allowed — they
+  verify a locator resolves without pulling file content into context.
 - You execute **one phase to completion at a time**, fresh Read at entry, then
   verify its end-state postcondition before advancing — never interleave
   phases, never run one from a remembered summary.
