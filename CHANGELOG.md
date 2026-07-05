@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.7.0] — 2026-07-05
+
+### Added
+- **Evidence provenance for the architect**: the ADR-drafting agent now
+  follows the `research-method` evidence discipline (loaded via agent
+  frontmatter, with an explicit-override note — tag semantics and
+  confidence ceilings bind; the RES-doc output machinery is replaced by
+  ADR-shaped output). Every web-sourced claim in option prose carries an
+  inline tag + confidence (`[VERIFIED: <source>, confidence: <RATING>]` /
+  `[CITED: <url>, confidence: <RATING>]` / `[ASSUMED, confidence: LOW]`,
+  the rating at or below the tag's ceiling),
+  and every draft ends with a mandatory `## Assumptions` section
+  (`None.` when empty) — added to the `writing-adrs` template, MADR
+  structure, and option-comparison quality bar.
+- **Provenance validation in `/hive:waggle`**: step 6 verifies inline
+  tag+confidence on web-sourced claims and that every inline `[ASSUMED]`
+  claim has a matching Assumptions bullet (one architect re-invoke on
+  gaps, then report-and-drop); step 7 calls out the Assumptions entries at
+  the acceptance gate, re-runs the checks after any revision-path edit
+  before final acceptance, and flags resumed pre-0.7.0 proposed drafts as
+  having no provenance block instead of re-drafting them.
+- **`/hive:bumble --yolo` assumption carve-out**: an ADR drafted in-run
+  whose Assumptions section is non-`None.` is never auto-accepted — its
+  acceptance gate always goes to the human.
+
 ## [0.6.0] — 2026-07-05
 
 ### Added
