@@ -168,7 +168,9 @@ the linked open RES docs — any acceptance gate for an id in that snapshot goes
 to the human; only assumptions introduced during this run (absent from the
 snapshot) are auto-acceptable.
 
-**Never auto-answered under any flag:** every swarm PAUSE, every error/halt
+**Never auto-answered under any flag:** every swarm PAUSE, swarm's final
+milestone→main merge gate (Step 4.5 — code landing on main is never a
+doc-gate delegation), every error/halt
 report, comb's 3-iteration abort, waggle's incomplete-draft failure, every
 missing-argument prompt, and anything raised inside pollinate or sting. These
 always go to the human, flag or no flag.

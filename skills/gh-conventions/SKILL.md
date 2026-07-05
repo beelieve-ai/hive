@@ -299,30 +299,58 @@ After every squash-merge, the mandatory main sync below applies.
 
 ## Branch / PR flow
 
-One issue = one branch = one squash-merged PR.
+One issue = one branch = one squash-merged PR, into a **base branch**
+`<base>`: during `/hive:swarm` that is the milestone integration branch
+(next section); outside a milestone it is the default branch.
 
-1. **Start from fresh main** (see sync rule below), then:
+1. **Start from fresh `<base>`** (see sync rule below), then:
    `git switch -c issue/<n>-<slug>`
 2. Implement, run the issue's verification command, commit
    (Conventional Commits).
 3. Push — `gh pr create` needs a pushed branch in non-interactive use:
    `git push -u origin issue/<n>-<slug>`
 4. Create the PR:
-   `gh pr create --fill --body "Closes #<n>"`
+   `gh pr create --fill --base <base> --body "Closes #<n>"`
    (`--body` overrides the fill body; the title still comes from the commits.
-   `Closes #<n>` auto-closes the issue on merge.)
+   `Closes #<n>` links the PR to the issue but **auto-closes only on
+   default-branch merges** — merging into a milestone branch closes
+   nothing, which is why swarm closes the issue explicitly after the
+   merge.)
 5. Merge:
    `gh pr merge --squash --delete-branch`
-6. **Sync local main — mandatory after EVERY squash-merge:**
+6. **Sync the local base — mandatory after EVERY squash-merge:**
 
 ```bash
-git switch main && git pull --ff-only origin main
+git switch <base> && git pull --ff-only origin <base>
 ```
 
-`gh pr merge` does not update local main. After a squash-merge, local main is
+`gh pr merge` does not update the local base. After a squash-merge, the
+local base is
 **always stale**; skipping the sync makes the next branch build on an old tree
-and blocks any later push from main. Run the sync before cutting the next
-branch and before any commit on main — no exceptions.
+and blocks any later push from it. Run the sync before cutting the next
+branch and before any commit on the base — no exceptions.
+
+## Milestone integration branch (`/hive:swarm`)
+
+One milestone = one integration branch = one final merge-commit PR to the
+default branch.
+
+- **Name**: `milestone/<milestone-number>-<slug>` (slug from the milestone
+  title, derived like issue slugs). Swarm cuts it from fresh main at
+  milestone start and pushes it (`git push -u origin <branch>`); on resume
+  an existing remote branch is reused, never re-cut.
+- **During the milestone**: it is `<base>` for every task PR above; the
+  milestone verification command runs on it after every merge.
+- **Final PR**: `gh pr create --base <default-branch> --head <branch>` —
+  merged with `gh pr merge <pr#> --merge --delete-branch` (a merge commit:
+  main keeps the per-task squashed commits; never squash the milestone,
+  never push the branch onto main directly). Its merge is a human gate in
+  swarm — even under `--yolo`.
+- **State probes** (resume-safe):
+  `git ls-remote --heads origin "milestone/<number>-*"` for the branch,
+  `gh pr list --head <branch> --base <default-branch> --state all --json number,state,mergedAt`
+  for the final PR. Branch gone + PR merged is the normal post-merge
+  state, not an error.
 
 ## Merge failures
 

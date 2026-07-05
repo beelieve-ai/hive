@@ -300,15 +300,25 @@ of a PR introducing a lifecycle artifact file, the ID-collision check in
 `hive:gh-conventions` runs (re-glob the artifact directory on the remote
 default; renumber and relink on collision).
 
-## Branch / PR flow
+## Branch / PR flow (build phase)
 
-1. Branch `issue/<n>-<slug>` from **fresh** main.
+Each milestone builds on its own **integration branch**
+`milestone/<number>-<slug>` (`<base>`), cut by swarm from fresh main at
+milestone start; main only changes at the milestone's final PR.
+
+1. Branch `issue/<n>-<slug>` from **fresh** `<base>`.
 2. worker implements, commits, and pushes: `git push -u origin <branch>`.
-3. `gh pr create --fill --body "Closes #<n>"`
-4. `gh pr merge --squash --delete-branch` (auto-closes the issue).
-5. **Always** afterwards: `git switch main && git pull --ff-only origin main`
-   — local main is stale after **every** squash-merge; sync before cutting
-   the next branch and before any commit on main.
+3. `gh pr create --fill --base <base> --body "Closes #<n>"`
+4. `gh pr merge --squash --delete-branch`, then `gh issue close <n>` —
+   explicit and sanctioned: `Closes #N` does not auto-close on merges into
+   a non-default branch.
+5. **Always** afterwards: `git switch <base> && git pull --ff-only origin
+   <base>` — the local base is stale after **every** squash-merge; sync
+   before cutting the next branch.
+6. All tasks closed → **one final PR** `<base>` → main, merged as a
+   **merge commit** (`--merge --delete-branch`, preserving per-task
+   commits) behind a human gate — even under `--yolo`. Closeout (PRD
+   status flip, epic/milestone close) happens only after this merge.
 
 Merge failures are **classified and auto-resolved first**: agent-fixable
 blockers (conflicts, stale base, failing checks) get up to 2 worker
@@ -316,9 +326,12 @@ merge-fix rounds, each followed by a fresh guard review; structurally
 unresolvable blockers (required human approval, permissions) and exhausted
 retries **park the task under `hive:parked` with the PR URL** — the swarm
 continues with independent work and the parked report is the human gate.
-Never mark progress or close issues manually. After every merge, swarm runs
-the plan's `milestone_verification.command` on main; a red result triggers
-a fix-forward synthetic task, and nothing else merges until main is green.
+(The final milestone PR has no task issue to park: its exhausted or
+structural blockers PAUSE the run instead.) Never mark progress manually,
+and never close issues outside the sanctioned swarm closes. After every
+merge, swarm runs the plan's `milestone_verification.command` on `<base>`;
+a red result triggers a fix-forward synthetic task, and nothing else
+merges until the branch is green.
 
 ## Worker isolation
 
@@ -363,8 +376,9 @@ per-role matrix (`architect`, `planner`, `guard`, `worker`, `scout`,
 ## Residual risks (spec-faithful, accepted)
 
 - A **closed-but-unmerged blocker is trusted as done** — the happy path
-  auto-closes issues via squash-merge, so a manually closed issue passes as
-  a satisfied dependency.
+  closes each issue explicitly right after its PR squash-merges into the
+  milestone branch, so a manually closed issue is indistinguishable from a
+  merged one and passes as a satisfied dependency.
 - **CONTENT-only plan-review reruns don't re-check previously passing
   reviewers** — only failed reviewers rerun on content-level corrections.
 - **Per-task ADR citation has no hard forcing function** — `adr_refs: []`
