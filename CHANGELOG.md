@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The
 authoritative version is the `version` field in
 `.claude-plugin/plugin.json`; installed plugins update only when it is bumped.
 
+## [0.5.1] — 2026-07-05
+
+### Removed
+- Accidental root `CONTEXT.md` (a consumer-project artifact that a grilling
+  session created in the plugin's own source repo) and its references in
+  `CLAUDE.md` and the README repository layout.
+
 ## [0.5.0] — 2026-07-05
 
 ### Added

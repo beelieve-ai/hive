@@ -92,7 +92,6 @@ rules/
 docs/               output tree, populated in the repo Hive runs against
   prd/ research/ adr/ plans/    PRD-NNN / RES-NNN / ADR-NNNN / PLAN-NNN
 CHANGELOG.md · LICENSE
-CONTEXT.md          canonical glossary (lazily created by grilling sessions)
 ARCHITECTURE.md     bedrock digest of accepted ADRs (lazily created by /hive:waggle, imported by root CLAUDE.md)
 ```
 
