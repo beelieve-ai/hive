@@ -255,8 +255,15 @@ never keys off labels. The spec's four doc-phase labels
    — local main is stale after **every** squash-merge; sync before cutting
    the next branch and before any commit on main.
 
-Merge failures (branch protection, required checks) **pause with the PR
-URL** — never mark progress or close issues manually.
+Merge failures are **classified and auto-resolved first**: agent-fixable
+blockers (conflicts, stale base, failing checks) get up to 2 worker
+merge-fix rounds, each followed by a fresh guard review; structurally
+unresolvable blockers (required human approval, permissions) and exhausted
+retries **park the task under `hive:parked` with the PR URL** — the swarm
+continues with independent work and the parked report is the human gate.
+Never mark progress or close issues manually. After every merge, swarm runs
+the plan's `milestone_verification.command` on main; a red result triggers
+a fix-forward synthetic task, and nothing else merges until main is green.
 
 ## Worker isolation
 

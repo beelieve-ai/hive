@@ -1,6 +1,6 @@
 ---
 name: worker
-description: Implementation agent for the Hive lifecycle. Use during /hive:swarm to implement exactly one ready task issue per invocation — pass it the issue number, the full issue body, and the linked PRD/ADR file paths. It branches from fresh main, implements, verifies, commits, and pushes the branch (it never creates PRs or merges). Also use it to apply guard findings on the same branch in a fix round.
+description: Implementation agent for the Hive lifecycle. Use during /hive:swarm to implement exactly one ready task issue per invocation — pass it the issue number, the full issue body, and the linked PRD/ADR file paths. It branches from fresh main, implements, verifies, commits, and pushes the branch (it never creates PRs or merges). Also use it to apply guard findings on the same branch in a fix round, or to unblock a stuck PR (rebase onto main, resolve conflicts, fix failing checks) in a merge-fix round.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: sonnet
 skills: [gh-conventions]
@@ -76,6 +76,29 @@ round on the **same branch** — never a new one:
 2. Address every finding — each names a concrete issue and fix.
 3. Re-run the Verification command until it passes again.
 4. Commit (conventional) and push again (`git push` — upstream is set).
+
+## Merge-fix rounds (blocked PR)
+
+When the orchestrator reports that the PR for your branch cannot merge
+(conflicts, stale base, failing checks), you are in a **merge-fix round** on
+the **same branch** — never a new one:
+
+1. `git switch issue/<n>-<slug>` (verify you're on it, tree clean), then
+   `git fetch origin`.
+2. **Rebase onto `origin/main`** (`git rebase origin/main`) and resolve every
+   conflict. Resolve toward preserving *both* main's changes and this task's
+   acceptance criteria — never discard a main-side change just to make the
+   rebase easy. If a conflict is genuinely unresolvable without violating an
+   acceptance criterion, stop and report it instead of guessing.
+3. **Address the failing checks** named in the briefing (check names plus
+   failure logs or a details URL). If no log was retrievable, re-run the
+   task's Verification command and diagnose from that output.
+4. Re-run the Verification command until green.
+5. Commit any fixes (conventional) and push the rebased branch with
+   `git push --force-with-lease` — safe because swarm is serial and exactly
+   one worker owns a branch at a time.
+
+Everything else is unchanged: no PRs, no merges, no label or issue edits.
 
 ## Hard boundaries
 

@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer-sizing
-description: Read-only plan reviewer for task sizing and verifiability. Use during /hive:comb plan review (in parallel with plan-reviewer-context and plan-reviewer-dag) to check that every task in a plan.yaml fits one fresh-context worker session (~2–5 files), has measurable acceptance criteria, and carries a runnable Verification command — proposing concrete splits for oversized tasks. Input: the plan.yaml path. Output: a strict JSON verdict.
+description: Read-only plan reviewer for task sizing and verifiability. Use during /hive:comb plan review (in parallel with plan-reviewer-context and plan-reviewer-dag) to check that every task in a plan.yaml fits one fresh-context worker session (~2–5 files), has measurable acceptance criteria, and carries a self-asserting headless Verification command — and that the plan carries a milestone_verification command — proposing concrete splits for oversized tasks. Input: the plan.yaml path. Output: a strict JSON verdict.
 tools: Read, Grep, Glob
 model: sonnet
 ---
@@ -45,17 +45,32 @@ The plan **passes** only if every task satisfies all of the following:
    `## Acceptance criteria` section whose entries are measurable, checkable
    statements of done. Vague criteria ("works correctly", "code is clean",
    "handles errors gracefully" with no observable behavior) are findings.
-3. **Runnable Verification command** — each task body ends with a
-   `## Verification` section containing runnable command(s) whose failure
-   means the task is not done, executable from the repo root with no manual
-   setup beyond what the task itself establishes. "Code review looks good"
-   or "file exists" alone is not verification — prefer a test invocation or
-   an observable behavior check (a `test -f path` check is acceptable only
-   for pure file-creation tasks). A missing section, a prose-only section,
-   or a command that cannot actually run is a finding.
+3. **Self-asserting Verification command** — each task body ends with a
+   `## Verification` section containing runnable, headless command(s)
+   executable from the repo root with no manual setup beyond what the task
+   itself establishes, whose **exit code alone** decides pass/fail. The
+   assertion must live in the command itself (a test runner, a `grep -q`
+   pipe, a script that exits nonzero) — a command whose success depends on
+   someone reading its output ("exits 0 and prints 3 rows") is a finding;
+   quote the prose expectation and propose the encoded form
+   (`… | grep -qx 'rows: 3'`). Any verification requiring human judgment
+   ("code review looks good", "check the UI looks right") is a finding with
+   a concrete automated rewrite (assertion test, snapshot test, e2e script)
+   as the fix — there is no manual-verification escape hatch. A `test -f
+   path` check is acceptable only for pure file-creation tasks. A missing
+   section, a prose-only section, or a command that cannot actually run is
+   a finding.
 
-Any violation on any task is a finding; one or more findings means
-`"verdict":"fail"`.
+The plan as a whole must additionally satisfy:
+
+4. **Milestone verification present** — the plan has a
+   `milestone_verification.command` that meets the same bar as criterion 3
+   (repo-root runnable, headless, self-asserting) and is plausibly scoped
+   to run after every merge. Missing, empty, or non-self-asserting →
+   a finding under the sentinel task key `milestone_verification`.
+
+Any violation on any task (or criterion 4 on the plan) is a finding; one or
+more findings means `"verdict":"fail"`.
 
 ## Split proposals for oversized tasks
 
@@ -75,7 +90,8 @@ as the FIRST fenced ```json code block in your reply; prose may follow it;
 the orchestrator parses only that block, and a missing or unparseable block
 counts as FAIL, never pass.
 
-- `task` is the plan task key the finding refers to (e.g. `"T2"`).
+- `task` is the plan task key the finding refers to (e.g. `"T2"`), or the
+  sentinel `"milestone_verification"` for plan-level criterion-4 findings.
 - `issue` states the defect precisely (the file count, the vague criterion
   quoted, the missing or non-runnable command).
 - `fix` states the concrete correction — for oversized tasks, the full
