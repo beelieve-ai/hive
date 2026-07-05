@@ -253,6 +253,39 @@ one issue at a time, so worktrees add complexity without benefit.
 `isolation: worktree` is the recorded enhancement path for parallel
 execution.
 
+## Model presets
+
+Which Claude model each Hive agent role runs on is configured in one file,
+`models.yaml` at the **plugin root** (next to `.claude-plugin/`, shipped with
+the plugin). It defines three presets — `quality`, `balanced`, `cheap` — each a
+per-role matrix (`architect`, `planner`, `guard`, `worker`, `scout`,
+`plan-reviewer`), with a top-level `active:` key selecting the live preset.
+
+- **Role key = agent name minus the `hive:` prefix, normalized**: any
+  `plan-reviewer-*` agent maps to the single `plan-reviewer` key before the
+  preset lookup (e.g. `hive:plan-reviewer-dag` → `plan-reviewer`) — the three
+  reviewer variants are one class of work.
+- **Orchestrator skills resolve and pass the model at spawn time.** Every Hive
+  command that spawns agents (`/hive:forage`, `/hive:waggle`, `/hive:comb`,
+  `/hive:swarm`) reads the config, resolves the model (project `agents:` pin
+  if set, else `presets[active][role]`), and passes it as the `model` param on
+  **every** Agent spawn — including re-spawns
+  in comb's planner fix rounds and swarm's worker fix rounds. `/hive:bumble`
+  inherits this by executing the phase skills fresh.
+- **Per-project override at `.hive/models.yaml`** (a Hive-scoped path — a bare
+  `models.yaml` at repo root could collide with a consuming repo's tooling).
+  Two optional flat keys, no deep-merge: `active:` switches the preset (the
+  plugin's presets still apply), and `agents:` pins individual roles on top
+  of the active preset (e.g. `agents: {scout: fable}`). Precedence:
+  `agents:` pin > active preset > frontmatter fallback.
+- **Frontmatter is the fallback tier, aligned to `balanced`.** Each agent still
+  pins `model:` in its frontmatter. The spawn-time param wins whenever config
+  resolves; on **any** resolution failure (missing or unparseable plugin
+  `models.yaml`, missing preset, or missing role key) the skill omits the
+  `model` param and the agent's frontmatter default applies, with a one-line
+  warning. An unparseable `.hive/models.yaml` is ignored entirely — the plugin
+  config still applies. Model config never hard-fails a lifecycle command.
+
 ## Residual risks (spec-faithful, accepted)
 
 - A **closed-but-unmerged blocker is trusted as done** — the happy path

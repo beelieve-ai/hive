@@ -2,7 +2,7 @@
 name: planner
 description: Drafts the complete plan.yaml for /hive:comb. Use when an approved PRD (plus its accepted ADRs) must be decomposed into a task DAG, or when reviewer findings require the plan draft to be revised. Returns the full plan.yaml content — never writes files.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 skills: decomposition, crosslinking
 ---
 
