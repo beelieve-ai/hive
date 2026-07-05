@@ -1,9 +1,10 @@
 # Hive agent model presets.
 # Selects the model each Hive agent role is spawned with.
 # Switch preset via `active:` here, or per-project via `.hive/models.yaml`
-# in the consuming repo: `active:` alone is a valid override (these presets
-# still apply); if the project file also has a `presets:` block, that block
-# replaces this one wholesale. No deep-merge.
+# in the consuming repo with two optional flat keys: `active:` switches the
+# preset, and `agents:` pins individual roles on top of it (e.g.
+# `agents: {scout: fable}`). Precedence: agents pin > active preset >
+# agent frontmatter. No deep-merge.
 # If resolution fails, orchestrators omit the model param and each agent's
 # frontmatter default (aligned to `balanced`) applies.
 active: balanced

@@ -267,15 +267,17 @@ per-role matrix (`architect`, `planner`, `guard`, `worker`, `scout`,
   reviewer variants are one class of work.
 - **Orchestrator skills resolve and pass the model at spawn time.** Every Hive
   command that spawns agents (`/hive:forage`, `/hive:waggle`, `/hive:comb`,
-  `/hive:swarm`) reads `models.yaml`, resolves `presets[active][role]`, and
-  passes it as the `model` param on **every** Agent spawn — including re-spawns
+  `/hive:swarm`) reads the config, resolves the model (project `agents:` pin
+  if set, else `presets[active][role]`), and passes it as the `model` param on
+  **every** Agent spawn — including re-spawns
   in comb's planner fix rounds and swarm's worker fix rounds. `/hive:bumble`
   inherits this by executing the phase skills fresh.
 - **Per-project override at `.hive/models.yaml`** (a Hive-scoped path — a bare
   `models.yaml` at repo root could collide with a consuming repo's tooling).
-  **Two-key shallow rule, no deep-merge**: the project file may set `active:`
-  alone (the plugin's shipped presets still apply); if it also contains a
-  `presets:` block, that block wins **wholesale**. No per-role merging.
+  Two optional flat keys, no deep-merge: `active:` switches the preset (the
+  plugin's presets still apply), and `agents:` pins individual roles on top
+  of the active preset (e.g. `agents: {scout: fable}`). Precedence:
+  `agents:` pin > active preset > frontmatter fallback.
 - **Frontmatter is the fallback tier, aligned to `balanced`.** Each agent still
   pins `model:` in its frontmatter. The spawn-time param wins whenever config
   resolves; on **any** resolution failure (missing or unparseable plugin

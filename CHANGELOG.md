@@ -14,10 +14,10 @@ authoritative version is the `version` field in
   `planner`, `guard`, `worker`, `scout`, `plan-reviewer`), with a top-level
   `active:` key selecting the live preset. The single `plan-reviewer` key
   covers all three reviewer variants.
-- **Per-project override at `.hive/models.yaml`**: set `active:` alone to
-  switch preset (the plugin's shipped presets still apply), or supply a whole
-  `presets:` block to replace them wholesale — two-key shallow rule, no
-  deep-merge.
+- **Per-project override at `.hive/models.yaml`**: `active:` switches the
+  preset, and an optional flat `agents:` map pins individual roles on top of
+  it (e.g. `agents: {scout: fable}`). Precedence: `agents:` pin > active
+  preset > frontmatter fallback. No deep-merge.
 
 ### Changed
 - Orchestrator skills (`/hive:forage`, `/hive:waggle`, `/hive:comb`,

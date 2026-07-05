@@ -97,10 +97,11 @@ The full rules — naming, cross-linking, ID allocation, `gh` automation ground 
 on, via three presets — `quality`, `balanced`, `cheap` — selected by a
 top-level `active:` key. Hive orchestrator commands read it and pass the
 resolved model on every agent spawn. Override per project with
-`.hive/models.yaml`: set `active:` alone to switch preset (the plugin's presets
-still apply), or supply a whole `presets:` block to replace them wholesale (no
-deep-merge). If config resolution fails, each agent falls back to its
-frontmatter default (aligned to `balanced`) — model config never hard-fails a
+`.hive/models.yaml`: `active:` switches the preset, and an optional flat
+`agents:` map pins individual roles on top of it (e.g.
+`agents: {scout: fable}`) — precedence: `agents:` pin > active preset >
+frontmatter, no deep-merge. If config resolution fails, each agent falls
+back to its frontmatter default (aligned to `balanced`) — model config never hard-fails a
 run. Full semantics live in [`rules/colony.md`](rules/colony.md).
 
 ## Versioning & releases
