@@ -137,11 +137,15 @@ doc-intended branch, just commit there.
 docs(prd): approve PRD-NNN
 ```
 
-   Then settle the run's doc PR per the doc commit flow's merge ask —
+   Then, **only if Step 3 opened a doc PR** (the default-branch path),
+   settle it per the doc commit flow's merge ask —
    "Merge now (Recommended)" / "Leave open for review" (the PR introduces
    the new PRD file, so the ID-collision check applies before merging;
    leaving it open keeps the session on the doc branch). On "Leave as
-   draft for now", the PR simply stays open with the draft. (If the user
+   draft for now", the PR simply stays open with the draft. **If Step 3
+   committed on a doc-intended branch instead** (no PR), there is nothing
+   to settle — the user drives that branch's merge; just confirm the
+   approval commit is pushed. (If the user
    already edited the status themselves, append the `prd-approved` entry
    now if the audit log lacks it, then commit whatever is uncommitted, or
    confirm it is committed.)

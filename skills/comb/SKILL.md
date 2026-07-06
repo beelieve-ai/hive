@@ -102,10 +102,15 @@ Ground rules that bind every step:
      `/hive:swarm <PRD-id>`, and stop.
    - **No local plan matches, but an open doc PR may carry one** → before
      declaring a fresh run, check
-     `gh pr list --state open --json number,headRefName,files` for a PR
+     `gh pr list --state open --limit 1000 --json number,headRefName,files`
+     (the `--limit 1000` is load-bearing — gh's 30-PR default could hide
+     the very plan PR this probe exists to catch, per Step 1's truncation
+     rule) for a PR
      whose head branch matches `docs/PLAN-*` or whose files touch
-     `docs/plans/PLAN-*.yaml`. A hit that belongs to this PRD → **never
-     mint a new PLAN id**: report the PR and ask via **AskUserQuestion**
+     `docs/plans/PLAN-*.yaml`. A hit that belongs to this PRD (its plan
+     file's `prd:` is this PRD, or it also touches this PRD's file) →
+     **never mint a new PLAN id**: report the PR and ask via
+     **AskUserQuestion**
      whether to check out its branch and resume there, merge it first and
      resume on main, or abort. No hit → fresh run (first phase), continue
      with Step 1.
@@ -329,6 +334,15 @@ links 404 unless the docs are on the default branch first. So, before the first
 Skip the commit if the docs are already merged (resume case, nothing
 staged) — but always verify main is synced and the plan file is on the
 remote default branch before proceeding.
+
+**Settle the canonical plan id.** The ID-collision check may have
+renumbered the plan file during the merge (a parallel run that reached
+main first). Re-derive `PLAN-NNN` from the plan file's **actual name on
+the merged default branch** and use that canonical id for every remaining
+step (4.3–4.7) — never carry the pre-merge id forward. If it changed from
+the id 4.1 stamped into the milestone-description mirror, correct that
+`plan:` line now via read-modify-write (**replace** the stale line, do not
+append a second one).
 
 ### 4.3 Epic issue
 

@@ -32,7 +32,18 @@ or a direct `docs/prd/...` path).
    questions are **owned by that doc**. A re-run routes them back into
    that same doc (steps 3 and 5) — it never allocates a new RES id for
    them, otherwise the old doc would stay `open` forever.
-4. If root `CONTEXT.md` exists, read it and use its canonical vocabulary
+4. **Open doc PR from an interrupted run** — a prior forage that ended on
+   the Keep-open path (§9.2) leaves its RES docs **and** the PRD's
+   `research:` link on an **unmerged** doc branch, invisible to the globs
+   in items 1 and 3. Before treating anything as new, probe:
+   `gh pr list --state open --limit 1000 --json number,headRefName,files`
+   for a PR whose head matches `docs/RES-*` or whose files touch
+   `docs/research/RES-*.md` for this PRD. A hit → **do not re-mint**:
+   report the PR and ask via **AskUserQuestion** whether to check out its
+   branch and resume there (so this run's answers stack onto the same
+   docs), merge it first and resume on main, or abort. Only with no hit is
+   this a genuinely fresh or continuing-on-main run.
+5. If root `CONTEXT.md` exists, read it and use its canonical vocabulary
    throughout.
 
 ## 2. Derive the open questions
@@ -254,8 +265,11 @@ flips** — the marker is the sole provenance record while the doc stays
 `res-answered` audit line (step 8, `by: human|yolo`, detail `accepted: …`)
 joins that commit. Then re-evaluate the gate.
 
-**On Keep-open, or headless without `--yolo`:** report the gate is unmet,
-naming the blocking assumptions, and stop.
+**On Keep-open, or headless without `--yolo`:** note the gate is unmet and
+the blocking assumptions, then **proceed to §9.2** — never stop here. §9.2
+settles the doc PR and surfaces its URL; stopping before it would strand
+this run's RES work on an unreported, unmerged branch (the §9.2 report
+carries the unmet-gate detail).
 
 ### 9.2 Settle the run's doc PR, then report
 

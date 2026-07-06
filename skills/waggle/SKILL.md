@@ -78,6 +78,17 @@ the draft and gating it: resume that ADR's step-7 acceptance gate first,
 before any new drafting — never allocate a fresh id for a decision an
 existing proposed draft already covers.
 
+**Open doc PR from an interrupted run** — the globs here only see the
+default branch; a prior waggle that ended on the Keep-open path leaves its
+ADR draft (and any supersede flip) on an **unmerged** doc branch, invisible
+to them. Before mining or minting, probe
+`gh pr list --state open --limit 1000 --json number,headRefName,files` for
+a PR whose head matches `docs/ADR-*` or whose files touch
+`docs/adr/ADR-*.md` for this PRD. A hit → **do not re-mine or re-mint**:
+report the PR and ask via **AskUserQuestion** whether to check out its
+branch and resume its step-7 acceptance gate there, merge it first and
+resume on the default branch, or abort.
+
 Also repair the Accept-path crash window: any `status: accepted` ADR with
 `derived-from:` this PRD whose id is missing from the PRD's `adrs:`
 frontmatter list means a prior run was interrupted mid-Accept — append the
