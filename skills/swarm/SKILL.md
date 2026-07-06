@@ -550,8 +550,9 @@ never push `<base>` onto main directly.
    re-enter item 3 to re-classify and integration-merge, then return to
    this gate. Leave open → report the
    PR URL and **end the run** with closeout deferred; a re-run detects
-   the merged PR (item 1) and finishes. Headless without `--yolo` →
-   leave open and report, never merge.
+   the merged PR (item 1) and finishes. **Any headless run — with or
+   without `--yolo`, since this gate is never yolo-delegated** — cannot
+   pose the ask, so it leaves the PR open and reports it, never merges.
 5. **Sync main and final-verify**:
    `git switch main && git pull --ff-only origin main`; when Step 0.5
    recorded a verification command, run it once on main. **Red → PAUSE**
