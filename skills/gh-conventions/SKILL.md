@@ -346,11 +346,14 @@ default branch.
   main keeps the per-task squashed commits; never squash the milestone,
   never push the branch onto main directly). Its merge is a human gate in
   swarm — even under `--yolo`.
-- **State probes** (resume-safe):
-  `git ls-remote --heads origin "milestone/<number>-*"` for the branch,
-  `gh pr list --head <branch> --base <default-branch> --state all --json number,state,mergedAt`
-  for the final PR. Branch gone + PR merged is the normal post-merge
-  state, not an error.
+- **State probes** (resume-safe): `git ls-remote --heads origin
+  "milestone/<number>-*"` for the branch — **adopt the matched ref name**
+  as the canonical branch (the slug may have drifted since the cut); more
+  than one match → ambiguous, PAUSE. For the final PR, filter by the
+  number prefix (robust to slug drift and gh's 30-item default):
+  `gh pr list --base <default-branch> --state all --limit 1000 --json number,state,mergedAt,headRefName`,
+  matching `headRefName` that starts `milestone/<number>-`. Branch gone +
+  PR merged is the normal post-merge state, not an error.
 
 ## Merge failures
 
