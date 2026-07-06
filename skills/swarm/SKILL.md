@@ -441,11 +441,15 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    dependents of the parked issue stay blocked naturally via `blockedBy`,
    and Step 2 excludes parked tasks from selection. Do not pause.
 
-### 3.8 Verify the issue actually closed
+### 3.8 Verify the close took
 
-`gh issue view <n> --json state` — if it is somehow **still open** after
-3.7 item 3, close it explicitly: `gh issue close <n>`. This protects the
-termination invariant (Step 4.5 fires only when every task is closed).
+`gh issue view <n> --json state` — the **verify-after-mutate** discipline
+(the same one applied to every create) on 3.7 item 3's load-bearing close,
+**not** a redundant second close: only if the issue is somehow **still
+open** (a silently-failed close, or a resume path that reached here with
+the close skipped) do you close it — `gh issue close <n>`. Cheap insurance
+on the termination invariant (Step 4.5 fires only when every task is
+closed).
 
 ### 3.9 Sync the base again
 

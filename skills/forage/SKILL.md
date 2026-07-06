@@ -202,8 +202,10 @@ Implicit questions scouts flagged outside their cluster:
 
 This run's doc changes persist through the **doc commit flow**
 (`hive:gh-conventions`, authored-artifact variant): on the default branch
-that means one doc branch for the run (`docs/RES-NNN-<slug>`, the first
-new RES id), commit, push, PR — **defer the merge ask** until the run ends
+that means one doc branch for the run — `docs/RES-NNN-<slug>` (the first
+new RES id), or `docs/forage-<PRD-id>` on an **update-only re-run** that
+mints no new RES id (only routes answers into existing open docs) —
+commit, push, PR, and **defer the merge ask** until the run ends
 (step 9 may still commit acceptance markers to the same branch). On a
 doc-intended branch, just commit there.
 

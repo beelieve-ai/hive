@@ -249,10 +249,11 @@ Record the verdict in the PRD's audit log (colony `Audit log` section):
 skip the append when the log already records that verdict. An approval's
 entry rides the Step 4.2 commit; a Decline commits the audit log
 **together with the reviewed plan.yaml** through the doc commit flow
-(`hive:gh-conventions`) before stopping — the PR auto-merges without an
-ask (declining already answered the only question), but it introduces a
-new plan file, so the **ID-collision check applies**. Never split the
-entry from the plan it records.
+(`hive:gh-conventions`) before stopping — the Decline verdict is the gate
+ruling on exactly this content, so the PR merges **without a second ask**
+per the doc commit flow (the symmetric case to Approve, not a blanket
+auto-merge); introducing a new plan file, it runs the **ID-collision
+check**. Never split the entry from the plan it records.
 
 ## Step 4 — Materialize (only after approval; resumable and IDEMPOTENT)
 
@@ -451,15 +452,23 @@ milestone is refused.
 
 ### 4.7 Final write-back commit
 
-Sync main again if anything was merged meanwhile
+**Resume check first**: an interrupted 4.7 (or the Step 0.3 write-back
+resume path) may have already left an **open write-back PR** — head
+`docs/PLAN-NNN-*`, touching the plan.yaml/PRD/audit write-backs. Probe
+`gh pr list --state open --limit 1000 --json number,headRefName,files` for
+it; if found, **merge that existing PR** (auto-squash-merge, no ask) rather
+than recommitting, then sync main — never open a second write-back PR for
+the same materialization.
+
+Only if none exists: sync main again if anything was merged meanwhile
 (`git switch main && git pull --ff-only origin main`), then commit the
 write-backs (plan.yaml issue numbers + status, PRD frontmatter, audit
 log), e.g.
 `docs(plans): materialize PLAN-NNN into milestone <title>`, via the doc
 commit flow's **write-back variant** (`hive:gh-conventions`): doc branch
 off fresh main, push, PR, auto-squash-merge with no ask, sync main. A
-blocked merge → stop and report the PR URL; re-running resumes here (an
-open `docs/PLAN-NNN-*` write-back PR is recognized by Step 0).
+blocked merge → stop and report the PR URL; re-running resumes at the
+resume check above.
 
 ### 4.8 Glossary-gaps tracker (idempotent)
 

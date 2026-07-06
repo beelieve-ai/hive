@@ -24,6 +24,8 @@ The orchestrator gives you:
 
 - the **issue number** (or plan task key) under review — echo it back as the
   `task` value in every finding,
+- the **base branch** `<base>` — the diff target in step 1 (the milestone
+  integration branch during `/hive:swarm`; treat a missing base as `main`),
 - the **full issue body**, containing the header block, the acceptance
   criteria, and the Verification command,
 - the **file paths** of the linked PRD and any referenced ADRs

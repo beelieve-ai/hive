@@ -281,9 +281,10 @@ branch** — they reach it only via a squash-merged PR (full flow in
 
 - **On the default branch** → commit on a doc branch
   (`docs/<artifact-id>-<slug>`), push, open a PR (no `Closes` footer).
-- **On a doc-intended branch** (already carries Hive doc commits, or
-  user-confirmed this session) → just commit there; the user drives the
-  merge (the dedicated-branch workflow).
+- **On a doc-intended branch** (a `docs/*` branch the flow created, or one
+  user-confirmed this session — merely having touched `docs/` does not
+  count) → just commit there; the user drives the merge (the
+  dedicated-branch workflow).
 - **On any other branch** → AskUserQuestion once per branch per session:
   commit here, or branch off the default instead.
 

@@ -310,8 +310,10 @@ docs(adr): add ADR-0007 queue backend for PRD-003
 docs(adr): add ADR-0001 CI provider (repo-scoped)
 ```
 
-Per that flow: on the default branch this means a doc branch
-(`docs/ADR-NNNN-<slug>`, the first accepted id), push, PR (new ADR files →
+Per that flow: on the default branch this means a doc branch —
+`docs/ADR-NNNN-<slug>` (the first accepted id), or `docs/waggle-<PRD-id>`
+on an update-only run that accepts no new ADR (e.g. only a supersede flip
+or an Open-Questions edit) — push, PR (new ADR files →
 the ID-collision check applies before merging), then the merge ask —
 "Merge now (Recommended)" / "Leave open for review". Under
 `/hive:bumble --yolo` the ADR-acceptance verdicts the carve-out covered

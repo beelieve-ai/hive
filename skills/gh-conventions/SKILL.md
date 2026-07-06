@@ -248,10 +248,12 @@ footer, different merge rules).
    `docs/PRD-004-checkout`, `docs/PLAN-007-materialize` for a write-back).
    One branch per command run — later commits of the same run reuse it.
 2. **On a doc-intended non-default branch** → commit there; merging is the
-   user's business (the dedicated-branch workflow). Doc-intended = the
-   branch already carries Hive doc commits (its history since diverging
-   from the default touches `docs/`), or the user confirmed it this
-   session. Push only if the branch tracks a remote.
+   user's business (the dedicated-branch workflow). Doc-intended = a branch
+   the doc flow itself created (name matches `docs/*`) **or** one the user
+   confirmed for lifecycle docs this session. A branch that merely happens
+   to have touched `docs/` is **not** doc-intended — it falls to case 3's
+   ask, so lifecycle docs never silently mix into an unrelated feature
+   branch. Push only if the branch tracks a remote.
 3. **On any other non-default branch** (a worker `issue/*` branch, an
    unrelated feature branch) → ask via **AskUserQuestion**, once per branch
    per session: commit lifecycle docs here, or branch off the default
@@ -268,9 +270,9 @@ footer, different merge rules).
   - Interactive runs: ask via **AskUserQuestion** — "Merge now
     (Recommended)" (squash-merge, then the mandatory main sync) or "Leave
     open for review" (report the PR URL; **stay on the doc branch** so
-    dependent commands stack on it). A command whose gate already approved
-    exactly this content (e.g. comb's plan approval) merges without a
-    second ask.
+    dependent commands stack on it). A command whose gate just **ruled on**
+    exactly this content — comb's plan approval, or the decline that
+    records that verdict — merges without a second ask.
   - `/hive:bumble --yolo`: auto-merge only PRs recording gate verdicts the
     carve-out covers, for artifacts created during that run. Headless
     without `--yolo`: never merge — leave the PR open and report it,
