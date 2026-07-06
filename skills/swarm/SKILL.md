@@ -86,9 +86,10 @@ PRD status) and rewritten to list form at the Step 5 write-back.
      (queue it);
    - milestone open (or closed) with **all its issues closed** but the
      entry still `planned` → an interrupted finalization: queue it for
-     **Steps 4.5 + 5 only** (final-merge probe and gate, then write-back
-     and closing — no work loop; the epic/milestone are never closed
-     while the final PR is unmerged);
+     **Step 0.5 + Step 1 + Steps 4.5 + 5** (setup and epic discovery still
+     run — they bind `<base>`, the verification command, and `epic#` — but
+     the work loop, Steps 2–4, is skipped; the epic/milestone are never
+     closed while the final PR is unmerged);
    - milestone **closed or missing while open issues remain / entry says
      planned with no explanation** → frontmatter↔GitHub drift: **fail
      loudly** with what disagrees, and stop. Never guess, never
@@ -103,8 +104,9 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    — no milestone steps run on this path.
 4. Work the queue **strictly sequentially in list order**: for each
    milestone queued for execution, run Step 0.5, then Steps 1–5; an
-   **interrupted-finalization** entry (queued for Steps 4.5 + 5 only)
-   skips straight to Step 4.5 — no gate, no work loop. Only after Step 5
+   **interrupted-finalization** entry still runs Step 0.5 and Step 1
+   (binding `<base>`, the verification command, and `epic#`), then skips
+   the work loop (Steps 2–4) straight to Step 4.5. Only after Step 5
    finishes one milestone does the next enter the queue's front. A
    milestone whose final PR is deliberately left open (Step 4.5) blocks
    the queue — later phases build on earlier ones.
@@ -148,28 +150,40 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    reason, in the final report) — never fail the run over it.
 3. **Ensure the parked label exists** (legacy milestones were materialized
    before it; idempotent): `gh label create hive:parked --force`.
-4. **Milestone integration branch** — resolve `<base>` for this milestone:
-   `milestone/<milestone-number>-<slug>` (slug derived from the milestone
-   title exactly like issue slugs: lowercase, non-alphanumerics → hyphens,
-   collapse repeats, trim). Then probe durable state, in this order:
+4. **Milestone integration branch** — the working name is
+   `milestone/<milestone-number>-<slug>` (slug from the milestone title
+   like issue slugs: lowercase, non-alphanumerics → hyphens, collapse
+   repeats, trim), but the milestone **number**, never the drift-prone
+   slug, is the identity in every probe below. Probe durable state in
+   order:
    1. **Remote branch exists**
       (`git ls-remote --heads origin "milestone/<milestone-number>-*"`) →
-      reuse it, never re-cut: fetch and create/update the local tracking
-      branch.
-   2. **No remote branch** → probe the final PR:
-      `gh pr list --head <base> --base <default-branch> --state all --json number,state,mergedAt`.
-      A **merged** final PR → this milestone's work is already on main;
-      skip straight to Step 4.5 (which will route to Step 5). A
-      **closed-unmerged** final PR → PAUSE (a human closed the milestone
-      PR — never re-open or re-create silently).
+      **adopt its actual ref name as `<base>`** (read it from the
+      `ls-remote` output; never re-derive from the current milestone
+      title, which may have been edited since the cut, yielding a name
+      that does not exist on the remote). More than one match → PAUSE
+      (ambiguous milestone branch). Reuse it, never re-cut: fetch and
+      create/update the local tracking branch.
+   2. **No remote branch** → probe the final PR by number prefix (robust
+      to slug drift and to gh's 30-item default):
+      `gh pr list --base <default-branch> --state all --limit 1000 --json number,state,mergedAt,headRefName`,
+      filtered for `headRefName` starting `milestone/<milestone-number>-`.
+      A **merged** match → the milestone is already on main: capture its
+      `headRefName` as `<base>` and its number, and treat this as an
+      interrupted finalization (Step 4.5 item 1 confirms merged and routes
+      to Step 5). A **closed-unmerged** match → PAUSE (a human closed the
+      milestone PR — never re-open or re-create silently).
    3. **No remote branch, no final PR** → safe to cut fresh **only if no
       task issue of this milestone is closed and no task PR has merged**
       (probe: `gh issue list --milestone "<title>" --state closed --json
       number,labels` must return no `hive:managed` tasks, and
-      `gh pr list --state merged --json headRefName` filtered for this
-      milestone's `issue/<n>-` heads must be empty); otherwise the branch
-      vanished with merged work on it → **PAUSE as corrupted branch
-      state**, never recut an empty branch over closed tasks. When safe:
+      `gh pr list --state merged --limit 1000 --json headRefName` filtered
+      for this milestone's `issue/<n>-` heads must be empty); otherwise the
+      branch vanished with merged work on it → **PAUSE as corrupted branch
+      state**, never recut an empty branch over closed tasks. When safe,
+      first delete any leftover local `<base>` from an interrupted prior
+      cut (`git branch -D <base>` if it exists — safe: the probes just
+      established no merged work is on it), then cut fresh:
       `git switch main && git pull --ff-only origin main &&
       git switch -c <base> && git push -u origin <base>`.
    Every later "sync" in Steps 3–4 targets `<base>`; main is touched again
@@ -369,15 +383,18 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    and use its captured number instead.)
 2. `gh pr merge <pr#> --squash --delete-branch` — always target the PR by
    its explicit number, never rely on branch context (on resume you may be
-   on `<base>` with no local issue branch).
-3. **Close the issue explicitly**: `gh issue close <n>` — the `Closes #<n>`
+   on `<base>` with no local issue branch). **If the merge fails**, run the
+   merge-blocker protocol (3.7a) — never mark progress manually, never
+   close the issue yourself, never bypass the failure; only park (3.7b)
+   after the protocol is exhausted. **Do not proceed to item 3 until the
+   merge has actually succeeded** (the close there must never fire on an
+   unmerged PR).
+3. **Only after the merge succeeds, close the issue explicitly**:
+   `gh issue close <n>` — the `Closes #<n>`
    body links the PR but does **not** auto-close on a merge into a
    non-default branch. This close is sanctioned: the work is merged,
    reviewed, and CI-gated at this point, and the loop's dependency
    readiness keys off closed issues.
-4. If the merge **fails**: run the merge-blocker protocol (3.7a) — never
-   mark progress manually, never close the issue yourself, never bypass
-   the failure. Only park (3.7b) after the protocol is exhausted.
 
 ### 3.7a Merge-blocker protocol (max 2 fix attempts)
 
@@ -504,24 +521,34 @@ never push `<base>` onto main directly.
    `Closes` footers — the epic and tasks are closed explicitly.
 3. **Mergeability**: classify per the gh-conventions `Merge failures`
    section (poll pending checks — this PR's CI is the integration test
-   against current main). **Agent-fixable** blockers (BEHIND, conflicts,
-   failed checks) get up to **2 merge-fix rounds**: cut
-   `mergefix/<base>` from `<base>`, spawn the **worker** in merge-fix mode
-   on it (base branch `main` for the merge — briefed to merge
-   `origin/main` into the fix branch, resolve toward preserving both
-   sides, fix failing checks, re-verify), guard-review it against `<base>`,
-   PR and squash-merge it into `<base>` (3.7 flow, no issue to close),
-   re-run milestone verification on `<base>`, then re-probe this PR.
-   Exhausted retries or **structurally unresolvable** blockers →
-   **milestone-level PAUSE**: report the PR URL and the classified
-   blocker and stop the run — there is no task issue to park, and phase
-   advancement must block on this PR.
+   against current main).
+   - **Agent-fixable** (BEHIND, conflicts, failed checks) → up to **2
+     integration-merge rounds**. Spawn the **worker** in
+     **integration-merge mode** (`agents/worker.md`) on `<base>` itself —
+     not a fix branch, not an issue branch — with the classification, the
+     failure context, and the milestone verification command. It merges
+     `origin/main` into `<base>` (a merge commit — **never** a rebase; this
+     both preserves the per-task commits and makes main an ancestor, so a
+     BEHIND blocker actually clears), resolves conflicts, fixes failing
+     checks, re-runs milestone verification on `<base>`, and pushes
+     `<base>`. There is **no guard review and no issue** here — the
+     integration has no acceptance criteria of its own; milestone
+     verification (re-run on the branch now, and again on main at item 5)
+     is its check. After the worker returns, sync `<base>` (Step 3.9) and
+     re-probe this PR.
+   - **Structurally unresolvable** blockers, or still blocked after 2
+     rounds → **milestone-level PAUSE**: report the PR URL and the
+     classified blocker and stop the run — there is no task issue to park,
+     and phase advancement must block on this PR.
 4. **The gate** (even under `/hive:bumble --yolo` — the carve-out covers
    doc gates, not code landing on main): ask via **AskUserQuestion** —
    **"Merge now (Recommended)"** (description: what lands — milestone
    title, task count, merge-commit method) or **"Leave open for
    review"**. Merge now →
-   `gh pr merge <pr#> --merge --delete-branch`. Leave open → report the
+   `gh pr merge <pr#> --merge --delete-branch`. **If that merge command
+   fails** (main advanced between the item-3 check and the approval),
+   re-enter item 3 to re-classify and integration-merge, then return to
+   this gate. Leave open → report the
    PR URL and **end the run** with closeout deferred; a re-run detects
    the merged PR (item 1) and finishes. Headless without `--yolo` →
    leave open and report, never merge.
@@ -569,7 +596,8 @@ final PR is merged**. Execute in exactly this order:
    `gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH -f state=closed`.
 6. **Advance the queue** (PRD mode): if candidates remain, proceed to the
    next milestone in list order per Step 0 item 4 (Step 0.5 then Step 1,
-   or straight to Step 4.5 for an interrupted finalization). Otherwise —
+   then the work loop — or, for an interrupted finalization, Step 0.5 and
+   Step 1 then straight to Step 4.5). Otherwise —
    and always in single-milestone mode — final report.
 
 ## Final report
