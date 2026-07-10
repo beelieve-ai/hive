@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Execute a PRD's materialized milestones to completion — dependency-ordered task execution with worker/guard loops, agentic merge-blocker resolution (parking unresolvable PRs under hive:parked instead of halting), squash-merged PRs, post-merge milestone verification, and epic/milestone closing. Invoke as /hive:swarm <PRD-id> (e.g. /hive:swarm PRD-003) to work every remaining phase strictly in order, or as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3) to run a single milestone. Refuses to start a milestone unless its description contains the plan-review: passed marker."
+description: "Execute a PRD's materialized milestones to completion — dependency-ordered task execution on a per-milestone integration branch (task PRs squash-merge into milestone/<n>-<slug>; one final gate-asked merge-commit PR lands the milestone on main), with worker/guard loops, agentic merge-blocker resolution (parking unresolvable PRs under hive:parked instead of halting), post-merge milestone verification, and epic/milestone closing. Invoke as /hive:swarm <PRD-id> (e.g. /hive:swarm PRD-003) to work every remaining phase strictly in order, or as /hive:swarm <milestone-title-or-number> (e.g. /hive:swarm smoke-test or /hive:swarm 3) to run a single milestone. Refuses to start a milestone unless its description contains the plan-review: passed marker."
 disable-model-invocation: true
 ---
 
@@ -11,10 +11,14 @@ the primary form: execute everything left for that PRD, milestone by
 milestone, strictly in phase order) or a milestone **title or number** (the
 single-phase form). Either way you work through each milestone's task DAG
 one issue at a time — worker implements, guard reviews, you open and
-squash-merge the PR — until every task and the epic are closed and the
-milestone itself is closed. Milestone execution is **strictly sequential**:
-one milestone finishes (Step 5 closeout included) before the next begins —
-never interleave. Load the **gh-conventions** skill for the exact `gh`
+squash-merge the PR — until every task is closed, then land the milestone
+on main via one final PR (Step 4.5) and close the epic and milestone.
+**Each milestone builds on its own integration branch**
+`milestone/<milestone-number>-<slug>` (**`<base>`** everywhere below), cut
+from fresh main at milestone start: task branches cut from `<base>`, task
+PRs target `<base>`, and main only changes at the final merge-commit PR.
+Milestone execution is **strictly sequential**: one milestone finishes
+(Step 5 closeout included) before the next begins — never interleave. Load the **gh-conventions** skill for the exact `gh`
 command syntax before running any `gh` command; the ordering, gates, and
 write-back timing below are load-bearing and stated inline.
 
@@ -37,16 +41,19 @@ Ground rules that bind every step:
   blocker), offer the concrete ways forward as options with your
   recommendation first (`(Recommended)`, reason in the description), and let
   "Other" catch what you didn't foresee. Never mark progress manually, never
-  close issues to force the loop forward (the sole exception is the two
-  sanctioned `gh issue close` cases in Steps 3.3 and 3.8, which reconcile
-  GitHub with an already-merged state). Every resolved PAUSE gets a
+  close issues to force the loop forward (the sole exceptions are the
+  sanctioned `gh issue close` cases in Steps 3.3, 3.7, and 3.8, which
+  reconcile GitHub with an already-merged state — `Closes #N` does not
+  auto-close on merges into a non-default branch, so the post-merge close
+  in 3.7 is the normal path, not a repair). Every resolved PAUSE gets a
   `pause-resolved` entry (subject: the issue number, detail: the decision,
   `by: human`) in the PRD's audit log per the colony `Audit log` section —
   but **never append it mid-loop**: the working tree must stay clean
   between issues (Step 3.1) and on the worker's branch. Record the
   resolution in your running table and append all pending entries at
   Step 5; when a resolution ends the run instead, sync main, then append
-  and commit the entries before stopping.
+  and commit the entries via the doc commit flow's write-back variant
+  (PR + auto-squash-merge, per `hive:gh-conventions`) before stopping.
 
 ## Step 0 — Resolve the argument to a milestone queue
 
@@ -78,8 +85,11 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    - milestone **open with open `hive:managed` issues** → execute it
      (queue it);
    - milestone open (or closed) with **all its issues closed** but the
-     entry still `planned` → an interrupted closeout: queue it for
-     **Step 5 only** (write-back and closing, no work loop);
+     entry still `planned` → an interrupted finalization: queue it for
+     **Step 0.5 + Step 1 + Steps 4.5 + 5** (setup and epic discovery still
+     run — they bind `<base>`, the verification command, and `epic#` — but
+     the work loop, Steps 2–4, is skipped; the epic/milestone are never
+     closed while the final PR is unmerged);
    - milestone **closed or missing while open issues remain / entry says
      planned with no explanation** → frontmatter↔GitHub drift: **fail
      loudly** with what disagrees, and stop. Never guess, never
@@ -90,13 +100,16 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    per `hive:writing-prds` (here: all entries implemented → set
    `status: implemented`), append the `prd-implemented` audit entry
    (subject: the PRD id, detail: `plans: <every PLAN-NNN in the list>`) if
-   not already recorded, and commit+push per Step 5 item 3 — no milestone
-   steps run on this path.
+   not already recorded, and commit per Step 5 item 3 (write-back variant)
+   — no milestone steps run on this path.
 4. Work the queue **strictly sequentially in list order**: for each
    milestone queued for execution, run Step 0.5, then Steps 1–5; an
-   **interrupted-closeout** entry (queued for Step 5 only) skips straight
-   to Step 5 — no gate, no work loop. Only after Step 5 finishes one
-   milestone does the next enter the queue's front.
+   **interrupted-finalization** entry still runs Step 0.5 and Step 1
+   (binding `<base>`, the verification command, and `epic#`), then skips
+   the work loop (Steps 2–4) straight to Step 4.5. Only after Step 5
+   finishes one milestone does the next enter the queue's front. A
+   milestone whose final PR is deliberately left open (Step 4.5) blocks
+   the queue — later phases build on earlier ones.
 
 ### Single-milestone mode
 
@@ -137,6 +150,44 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    reason, in the final report) — never fail the run over it.
 3. **Ensure the parked label exists** (legacy milestones were materialized
    before it; idempotent): `gh label create hive:parked --force`.
+4. **Milestone integration branch** — the working name is
+   `milestone/<milestone-number>-<slug>` (slug from the milestone title
+   like issue slugs: lowercase, non-alphanumerics → hyphens, collapse
+   repeats, trim), but the milestone **number**, never the drift-prone
+   slug, is the identity in every probe below. Probe durable state in
+   order:
+   1. **Remote branch exists**
+      (`git ls-remote --heads origin "milestone/<milestone-number>-*"`) →
+      **adopt its actual ref name as `<base>`** (read it from the
+      `ls-remote` output; never re-derive from the current milestone
+      title, which may have been edited since the cut, yielding a name
+      that does not exist on the remote). More than one match → PAUSE
+      (ambiguous milestone branch). Reuse it, never re-cut: fetch and
+      create/update the local tracking branch.
+   2. **No remote branch** → probe the final PR by number prefix (robust
+      to slug drift and to gh's 30-item default):
+      `gh pr list --base <default-branch> --state all --limit 1000 --json number,state,mergedAt,headRefName`,
+      filtered for `headRefName` starting `milestone/<milestone-number>-`.
+      A **merged** match → the milestone is already on main: capture its
+      `headRefName` as `<base>` and its number, and treat this as an
+      interrupted finalization (Step 4.5 item 1 confirms merged and routes
+      to Step 5). A **closed-unmerged** match → PAUSE (a human closed the
+      milestone PR — never re-open or re-create silently).
+   3. **No remote branch, no final PR** → safe to cut fresh **only if no
+      task issue of this milestone is closed and no task PR has merged**
+      (probe: `gh issue list --milestone "<title>" --state closed --json
+      number,labels` must return no `hive:managed` tasks, and
+      `gh pr list --state merged --limit 1000 --json headRefName` filtered
+      for this milestone's `issue/<n>-` heads must be empty); otherwise the
+      branch vanished with merged work on it → **PAUSE as corrupted branch
+      state**, never recut an empty branch over closed tasks. When safe,
+      first delete any leftover local `<base>` from an interrupted prior
+      cut (`git branch -D <base>` if it exists — safe: the probes just
+      established no merged work is on it), then cut fresh:
+      `git switch main && git pull --ff-only origin main &&
+      git switch -c <base> && git push -u origin <base>`.
+   Every later "sync" in Steps 3–4 targets `<base>`; main is touched again
+   only at Step 4.5.
 
 ## Step 1 — Build the state map and discover the epic
 
@@ -181,9 +232,10 @@ PRD status) and rewritten to list form at the Step 5 write-back.
    open PR from ever being auto-merged on resume — unparking is a human
    act: resolve and remove the label (or merge the PR) and re-run
    /hive:swarm.
-2. **Red-main override**: if milestone verification is currently red
+2. **Red-base override**: if milestone verification is currently red
    (Step 3.9a), the only selectable task is its open synthetic fix task —
-   nothing else is worked or merged until main is green again.
+   nothing else is worked or merged until the milestone branch is green
+   again.
 3. If the ready set is **empty but open tasks remain** → this is the run's
    human gate. Report precisely: every `hive:parked` task with its PR URL
    and park reason, and every other open task with what blocks it (a
@@ -192,7 +244,7 @@ PRD status) and rewritten to list form at the Step 5 write-back.
 4. If open tasks remain, pick **unblocking-most-first**: the ready task
    with the highest `blocking` count (most other issues name it in their
    `blockedBy`). Tie-break by lowest issue number for determinism.
-5. If **no open tasks remain**, go to Step 5 (termination).
+5. If **no open tasks remain**, go to Step 4.5 (final merge), then Step 5.
 
 ## Model preset resolution
 
@@ -229,14 +281,14 @@ Let `<n>` be the selected issue number. Execute these sub-steps in order.
 to leave it clean. If it is dirty, **stop and report** what is dirty; never
 stash, clean, or commit stray state yourself.
 
-### 3.2 Sync main
+### 3.2 Sync the base
 
 ```bash
-git switch main && git pull --ff-only origin main
+git switch <base> && git pull --ff-only origin <base>
 ```
 
-Always — local main is stale after every squash-merge, and the worker must
-branch from a fresh tree.
+Always — the local base is stale after every squash-merge, and the worker
+must branch from a fresh tree.
 
 ### 3.3 Resume-safety check (never collide)
 
@@ -279,8 +331,9 @@ globbing `docs/prd/<PRD-id>-*.md` and `docs/adr/<ADR-id>-*.md`.
 
 Spawn the **worker** agent (Agent tool, subagent_type `hive:worker`) with
 exactly: the issue number `<n>`, the **exact branch name** `issue/<n>-<slug>` derived in 3.3, the
+**base branch** `<base>`, the
 **full issue body**, and the resolved **PRD/ADR file paths**.
-The worker creates that branch from the fresh main you prepared,
+The worker creates that branch from the fresh `<base>` you prepared,
 implements, runs the issue's Verification command until green, commits
 (Conventional Commits), and pushes the branch. It creates no PR and never
 merges. It returns a summary of at most 3 lines — record it in your
@@ -299,9 +352,11 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
 ### 3.6 Guard review loop (max 2 fix rounds)
 
 1. Ensure the worker's branch is checked out (`git switch <branch>`) —
-   guard reviews the working tree's `git diff main...HEAD`.
+   guard reviews the working tree's `git diff <base>...HEAD` (diffing
+   against main would re-review already-merged milestone work as part of
+   this task).
 2. Spawn the **guard** agent (Agent tool, subagent_type `hive:guard`) with:
-   the issue number, the full
+   the issue number, the **base branch** `<base>` (its diff target), the full
    issue body (acceptance criteria + Verification command), and the linked
    PRD/ADR paths. Guard reviews the diff against the acceptance criteria
    and ADR constraints and runs the Verification command.
@@ -316,20 +371,30 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    user and ask how to proceed. Never merge a failing branch.
 5. **On pass**: continue with 3.7.
 
-### 3.7 PR create, squash-merge
+### 3.7 PR create, squash-merge, explicit close
 
-1. From the issue branch: `gh pr create --fill --body "Closes #<n>"` —
+1. From the issue branch:
+   `gh pr create --fill --base <base> --body "Closes #<n>"` —
    capture stdout; strict `/pull/<number>` parse (fail on zero or multiple
-   matches); verify via `gh pr view <pr#> --json number,state,headRefName`.
+   matches); verify via
+   `gh pr view <pr#> --json number,state,headRefName,baseRefName`
+   (baseRefName must be `<base>`).
    (On the resume path from 3.3 an open PR already exists — skip creation
    and use its captured number instead.)
 2. `gh pr merge <pr#> --squash --delete-branch` — always target the PR by
    its explicit number, never rely on branch context (on resume you may be
-   on `main` with no local issue branch). Auto-closes the issue via the
-   `Closes #<n>` body.
-3. If the merge **fails**: run the merge-blocker protocol (3.7a) — never
-   mark progress manually, never close the issue yourself, never bypass
-   the failure. Only park (3.7b) after the protocol is exhausted.
+   on `<base>` with no local issue branch). **If the merge fails**, run the
+   merge-blocker protocol (3.7a) — never mark progress manually, never
+   close the issue yourself, never bypass the failure; only park (3.7b)
+   after the protocol is exhausted. **Do not proceed to item 3 until the
+   merge has actually succeeded** (the close there must never fire on an
+   unmerged PR).
+3. **Only after the merge succeeds, close the issue explicitly**:
+   `gh issue close <n>` — the `Closes #<n>`
+   body links the PR but does **not** auto-close on a merge into a
+   non-default branch. This close is sanctioned: the work is merged,
+   reviewed, and CI-gated at this point, and the loop's dependency
+   readiness keys off closed issues.
 
 ### 3.7a Merge-blocker protocol (max 2 fix attempts)
 
@@ -350,13 +415,15 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    stays in the worker's context.)
 3. **Merge-fix round**: spawn the **worker** on the same branch in
    merge-fix mode with: the issue number, the exact branch name, the
-   classification, and the failure context. It rebases onto `origin/main`,
+   **base branch** `<base>`, the
+   classification, and the failure context. It rebases onto
+   `origin/<base>`,
    resolves conflicts, fixes the failing checks, re-verifies, and pushes
    with `--force-with-lease`.
-4. **Fast-forward local main** (`git switch main && git pull --ff-only
-   origin main`) — the rebase absorbed new main-side commits, and guard's
-   `git diff main...HEAD` against a stale local main would pollute the
-   review with changes already merged.
+4. **Fast-forward the local base** (`git switch <base> && git pull
+   --ff-only origin <base>`) — the rebase absorbed new base-side commits,
+   and guard's `git diff <base>...HEAD` against a stale local base would
+   pollute the review with changes already merged.
 5. **Guard always re-reviews**: run the full 3.6 guard review loop on the
    rebased branch (same inputs, same max 2 fix rounds). If that loop ends
    unresolved, park (3.7b) instead of pausing.
@@ -374,26 +441,30 @@ so a missed or duplicate flip is harmless; do it anyway for visibility.
    dependents of the parked issue stay blocked naturally via `blockedBy`,
    and Step 2 excludes parked tasks from selection. Do not pause.
 
-### 3.8 Verify the issue actually closed
+### 3.8 Verify the close took
 
-`gh issue view <n> --json state` — if it is somehow **still open** after
-the merge, close it explicitly: `gh issue close <n>`. This protects the
-termination invariant (Step 5 fires only when every task is closed).
+`gh issue view <n> --json state` — the **verify-after-mutate** discipline
+(the same one applied to every create) on 3.7 item 3's load-bearing close,
+**not** a redundant second close: only if the issue is somehow **still
+open** (a silently-failed close, or a resume path that reached here with
+the close skipped) do you close it — `gh issue close <n>`. Cheap insurance
+on the termination invariant (Step 4.5 fires only when every task is
+closed).
 
-### 3.9 Sync main again
+### 3.9 Sync the base again
 
-`git switch main && git pull --ff-only origin main` — mandatory after
+`git switch <base> && git pull --ff-only origin <base>` — mandatory after
 every squash-merge, before anything else happens.
 
 ### 3.9a Milestone verification (when Step 0.5 recorded a command)
 
 Run the recorded `milestone_verification.command` from the repo root on the
-freshly synced main. Its exit code is the whole verdict — never interpret
-output.
+freshly synced `<base>`. Its exit code is the whole verdict — never
+interpret output.
 
 - **Green** → continue with 3.10.
-- **Red** → main is broken; fix forward, never revert, never rewrite
-  history:
+- **Red** → the milestone branch is broken; fix forward, never revert,
+  never rewrite history:
   1. Create a **synthetic fix task issue** with the exact conventions comb
      uses at materialization (gh-conventions `Create a task`): assigned to
      the milestone, `--parent <epic#>`, labels `phase:build,hive:managed`
@@ -404,16 +475,18 @@ output.
      the fix restores their verified state · **ADR:** —), `## Context` with the
      failing command, its output, and the merge that preceded it
      (issue `#<n>`, PR `#<pr#>`), `## Acceptance criteria` — the milestone
-     verification command passes on main — and `## Verification` — that
+     verification command passes on the milestone branch — and
+     `## Verification` — that
      same command. Capture and verify the number per gh-conventions.
   2. Post the 3.10 progress comment for `#<n>` first (it did merge), then
-     return to Step 4. The Step 2 red-main override makes this fix task
+     return to Step 4. The Step 2 red-base override makes this fix task
      the only selectable work; it flows through the normal
-     worker → guard → PR → merge → 3.9a path.
+     worker → guard → PR → merge → 3.9a path (cut from and merged into
+     `<base>` like any task).
   3. If milestone verification is **still red after 2 synthetic fix tasks**
-     for the same incident, **PAUSE** — main is broken and nothing else
-     may merge, so this gate halts the run: present the failure output and
-     both fix attempts to the user.
+     for the same incident, **PAUSE** — the milestone branch is broken and
+     nothing else may merge, so this gate halts the run: present the
+     failure output and both fix attempts to the user.
 
 ### 3.10 Progress comment on the epic
 
@@ -431,11 +504,73 @@ Add the same line to your running `issue# → 1-line summary` table.
 `gh issue list` call — never trust cached state) and return to Step 2.
 Repeat until no open tasks remain.
 
-## Step 5 — Milestone closeout (all its tasks closed)
+## Step 4.5 — Final merge to main (all tasks closed; gate-parity)
 
-Runs once per milestone in the queue. Execute in exactly this order:
+The milestone lands on main through **one final PR** — a **merge commit**,
+so main keeps the per-task squashed commits. Never squash the milestone,
+never push `<base>` onto main directly.
 
-1. **Sync main**: `git switch main && git pull --ff-only origin main`.
+1. **Probe the final PR's durable state**:
+   `gh pr list --head <base> --base <default-branch> --state all --json number,state,mergedAt`.
+   - **Merged** → the milestone is on main; go to item 5 (final
+     verification) and then Step 5.
+   - **Closed-unmerged** → PAUSE (a human closed the milestone PR — never
+     re-open or re-create silently).
+   - **Open** → continue with item 3 (re-pose the gate).
+   - **None** → create it (item 2).
+2. **Create the final PR**: sync `<base>` (Step 3.9), then
+   `gh pr create --base <default-branch> --head <base> --title "milestone: <milestone title>" --body "Milestone <title> (epic #<epic#>) — <k> tasks. plan: PLAN-NNN"`
+   — capture stdout, strict `/pull/<number>` parse, verify via
+   `gh pr view <pr#> --json number,state,baseRefName,headRefName`. No
+   `Closes` footers — the epic and tasks are closed explicitly.
+3. **Mergeability**: classify per the gh-conventions `Merge failures`
+   section (poll pending checks — this PR's CI is the integration test
+   against current main).
+   - **Agent-fixable** (BEHIND, conflicts, failed checks) → up to **2
+     integration-merge rounds**. Spawn the **worker** in
+     **integration-merge mode** (`agents/worker.md`) on `<base>` itself —
+     not a fix branch, not an issue branch — with the classification, the
+     failure context, and the milestone verification command. It merges
+     `origin/main` into `<base>` (a merge commit — **never** a rebase; this
+     both preserves the per-task commits and makes main an ancestor, so a
+     BEHIND blocker actually clears), resolves conflicts, fixes failing
+     checks, re-runs milestone verification on `<base>`, and pushes
+     `<base>`. There is **no guard review and no issue** here — the
+     integration has no acceptance criteria of its own; milestone
+     verification (re-run on the branch now, and again on main at item 5)
+     is its check. After the worker returns, sync `<base>` (Step 3.9) and
+     re-probe this PR.
+   - **Structurally unresolvable** blockers, or still blocked after 2
+     rounds → **milestone-level PAUSE**: report the PR URL and the
+     classified blocker and stop the run — there is no task issue to park,
+     and phase advancement must block on this PR.
+4. **The gate** (even under `/hive:bumble --yolo` — the carve-out covers
+   doc gates, not code landing on main): ask via **AskUserQuestion** —
+   **"Merge now (Recommended)"** (description: what lands — milestone
+   title, task count, merge-commit method) or **"Leave open for
+   review"**. Merge now →
+   `gh pr merge <pr#> --merge --delete-branch`. **If that merge command
+   fails** (main advanced between the item-3 check and the approval),
+   re-enter item 3 to re-classify and integration-merge, then return to
+   this gate. Leave open → report the
+   PR URL and **end the run** with closeout deferred; a re-run detects
+   the merged PR (item 1) and finishes. **Any headless run — with or
+   without `--yolo`, since this gate is never yolo-delegated** — cannot
+   pose the ask, so it leaves the PR open and reports it, never merges.
+5. **Sync main and final-verify**:
+   `git switch main && git pull --ff-only origin main`; when Step 0.5
+   recorded a verification command, run it once on main. **Red → PAUSE**
+   (the final PR's CI already tested this integration — a red main here
+   is exceptional; present the output, do not fix forward silently).
+   Green (or no command) → Step 5.
+
+## Step 5 — Milestone closeout (final PR merged)
+
+Runs once per milestone in the queue, **only after Step 4.5 confirms the
+final PR is merged**. Execute in exactly this order:
+
+1. **Sync main**: `git switch main && git pull --ff-only origin main`
+   (already done by 4.5 item 5 — re-assert, it is cheap).
 2. Edit the PRD (path from Step 0): flip **this milestone's**
    `milestones:` entry to `status: implemented` (rewriting legacy singular
    `milestone:`/`epic_issue:` fields to list form if still present —
@@ -452,10 +587,12 @@ Runs once per milestone in the queue. Execute in exactly this order:
    - **only if** the derived status flipped to implemented:
      `prd-implemented` (subject: the PRD id, detail:
      `plans: <every PLAN-NNN in the list>`).
-3. Commit and push:
-   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> milestone <milestone-number> implemented" && git push origin main`
+3. Commit via the doc commit flow's **write-back variant**
+   (`hive:gh-conventions`): doc branch off fresh main, then
+   `git add <prd-path> docs/audit/<PRD-id>-audit.md && git commit -m "docs(prd): mark <PRD-id> milestone <milestone-number> implemented"`
    (use `docs(prd): mark <PRD-id> implemented` when the PRD-level status
-   flipped).
+   flipped), push, PR, auto-squash-merge with no ask, sync main. A blocked
+   merge → stop and report the PR URL.
 4. **Close the epic explicitly**: `gh issue close <epic#>`. This is
    load-bearing — the epic shares the milestone with the tasks and nothing
    auto-closes it, so without this step the milestone could never be
@@ -464,22 +601,26 @@ Runs once per milestone in the queue. Execute in exactly this order:
    `gh api repos/{owner}/{repo}/milestones/<milestone-number> -X PATCH -f state=closed`.
 6. **Advance the queue** (PRD mode): if candidates remain, proceed to the
    next milestone in list order per Step 0 item 4 (Step 0.5 then Step 1,
-   or straight to Step 5 for an interrupted closeout). Otherwise — and
-   always in single-milestone mode — final report.
+   then the work loop — or, for an interrupted finalization, Step 0.5 and
+   Step 1 then straight to Step 4.5). Otherwise —
+   and always in single-milestone mode — final report.
 
 ## Final report
 
 Report to the user, per milestone worked: the milestone and epic that were
-closed and the running table of `issue# → 1-line summary` (every task,
-including any recovered/skipped ones), plus any non-`hive:managed` issues
-that were ignored, any interrupted closeouts that were finished, whether
+closed, the final milestone→main PR (number and state — merged, or left
+open for review), and the running table of `issue# → 1-line summary`
+(every task, including any recovered/skipped ones), plus any
+non-`hive:managed` issues
+that were ignored, any interrupted finalizations that were finished, whether
 milestone verification ran (and "legacy plan — no milestone verification",
 with the reason, when Step 0.5 found none), and the PRD's resulting status
 (`implemented`, or `planned` with the phases still remaining). (A run that
 ends at Step 2.3 instead — parked tasks remaining — reports the same table
 plus every parked PR with URL and reason; that report is the human gate. A
-parked milestone never closes, so in PRD mode the queue does not advance
-past it — later phases build on earlier ones.)
+parked milestone never closes, and a final PR left open defers the
+closeout, so in PRD mode the queue does not advance past either — later
+phases build on earlier ones.)
 
 ## Context discipline (binding throughout)
 

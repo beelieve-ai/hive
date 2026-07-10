@@ -99,15 +99,17 @@ Only after the shared-understanding gate has passed:
 
 Commit the new PRD **together with `CONTEXT.md`** when the interview touched
 it — the vocabulary and the artifact that coined it share one commit (per
-`domain-modeling`). Sync local main first per the `gh-conventions` skill
-(`git switch main && git pull --ff-only origin main` before any commit on
-main). Use a Conventional Commit, e.g.:
+`domain-modeling`), through the **doc commit flow** (`hive:gh-conventions`,
+authored-artifact variant). Use a Conventional Commit, e.g.:
 
 ```
 docs(prd): add PRD-NNN <short title>
 ```
 
-Then push (`git push origin main`).
+Per that flow: on the default branch this means a doc branch
+(`docs/PRD-NNN-<slug>`), push, and PR — but **defer the merge ask**: the
+approval gate is next, and its outcome settles the PR (Step 4). On a
+doc-intended branch, just commit there.
 
 ## Step 4 — Approval gate (human only — NEVER auto-approve)
 
@@ -123,21 +125,29 @@ Then push (`git push origin main`).
    never infer approval from silence or from enthusiasm about the draft.
 3. If the user requests changes: revise the draft (reopening grilling
    branches as needed, updating `CONTEXT.md` inline if terms shift), commit
-   the revision, and present again. While `status: draft`, the document is
-   freely editable.
+   the revision to the same doc branch (push again), and present again.
+   While `status: draft`, the document is freely editable.
 4. When the user declares approval in conversation, set `status: approved` in
    the frontmatter, append a `prd-approved` entry (subject: the PRD id,
    detail: `—`) to the PRD's audit log (`docs/audit/PRD-NNN-audit.md`,
    created now if absent — schema and rules in the colony `Audit log`
-   section), and commit + push both files together:
+   section), and commit both files together:
 
 ```
 docs(prd): approve PRD-NNN
 ```
 
-   (If the user already edited the status themselves, append the
-   `prd-approved` entry now if the audit log lacks it, then commit whatever
-   is uncommitted, or confirm it is committed.)
+   Then, **only if Step 3 opened a doc PR** (the default-branch path),
+   settle it per the doc commit flow's merge ask —
+   "Merge now (Recommended)" / "Leave open for review" (the PR introduces
+   the new PRD file, so the ID-collision check applies before merging;
+   leaving it open keeps the session on the doc branch). **If Step 3
+   committed on a doc-intended branch instead** (no PR), there is nothing
+   to settle — the user drives that branch's merge; just confirm the
+   approval commit is pushed. (If the user
+   already edited the status themselves, append the `prd-approved` entry
+   now if the audit log lacks it, then commit whatever is uncommitted, or
+   confirm it is committed.)
 
 5. Report: PRD ID, path, status, and the suggested next step
    (`/hive:forage PRD-NNN` if Open Questions exist, otherwise `/hive:waggle PRD-NNN`).

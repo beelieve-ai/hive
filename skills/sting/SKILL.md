@@ -182,16 +182,19 @@ play-back surfaces a mismatch, reopen that branch and grill on.
 If any file changed, commit **the target document together with
 `CONTEXT.md`** when the session touched it — the vocabulary and the
 artifact whose grilling resolved it share one commit (per
-`domain-modeling`). Sync local main first per the `gh-conventions` skill
-(`git switch main && git pull --ff-only origin main` before any commit on
-main). Conventional commit, e.g.:
+`domain-modeling`), persisted through the **doc commit flow**
+(`hive:gh-conventions`, authored-artifact variant). Conventional commit,
+e.g.:
 
 ```
 docs(prd): sharpen PRD-003 via sting session
 ```
 
-Then push (`git push origin main`). If no edits were agreed, there is
-nothing to commit — say so.
+Per that flow: on the default branch this means a doc branch
+(`docs/<target-artifact-id>-sting`), push, PR, then the merge ask —
+"Merge now (Recommended)" / "Leave open for review". On a doc-intended
+branch, just commit there. If no edits were agreed, there is nothing to
+commit — say so.
 
 ## 9. Report
 

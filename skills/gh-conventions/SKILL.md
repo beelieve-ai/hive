@@ -1,6 +1,6 @@
 ---
 name: gh-conventions
-description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types (org repos) or type:* label fallback (user repos) and dependencies, DAG reads, issue/PR number capture, and the branch/PR/squash-merge flow. Load whenever creating or editing milestones, issues, or PRs for hive:managed work.
+description: Exact gh commands for the Hive lifecycle — milestones via the REST API, epic/task creation with native types (org repos) or type:* label fallback (user repos) and dependencies, DAG reads, issue/PR number capture, the branch/PR/squash-merge flow, and the doc commit flow every Hive command uses to persist lifecycle documents. Load whenever creating or editing milestones, issues, or PRs for hive:managed work, or committing lifecycle docs.
 ---
 
 # gh conventions
@@ -232,32 +232,130 @@ a reminder, not work for the build loop, hence its deliberate exceptions:
   (`gh issue close <n>`). Humans may also close it manually; the next
   comb run corrects state either way.
 
+## Doc commit flow (lifecycle documents)
+
+How every Hive command persists lifecycle docs (`docs/**`, plus riders like
+`CONTEXT.md`, `ARCHITECTURE.md`, the root `CLAUDE.md` import line, and audit
+logs). **Hive never pushes directly to the default branch** — doc changes
+reach it only through a squash-merged PR. This flow is doc-shaped; do not
+copy the issue flow below verbatim (different branch names, no `Closes #N`
+footer, different merge rules).
+
+### Where to commit (decide once per commit point)
+
+1. **On the default branch** → create a doc branch and work there:
+   `git switch -c docs/<primary-artifact-id>-<slug>` (e.g.
+   `docs/PRD-004-checkout`, `docs/PLAN-007-materialize` for a write-back).
+   One branch per command run — later commits of the same run reuse it.
+2. **On a doc-intended non-default branch** → commit there; merging is the
+   user's business (the dedicated-branch workflow). Doc-intended = a branch
+   the doc flow itself created (name matches `docs/*`) **or** one the user
+   confirmed for lifecycle docs this session. A branch that merely happens
+   to have touched `docs/` is **not** doc-intended — it falls to case 3's
+   ask, so lifecycle docs never silently mix into an unrelated feature
+   branch. Push only if the branch tracks a remote.
+3. **On any other non-default branch** (a worker `issue/*` branch, an
+   unrelated feature branch) → ask via **AskUserQuestion**, once per branch
+   per session: commit lifecycle docs here, or branch off the default
+   instead (option 1)? Remember the answer for the session. Lifecycle docs
+   never mix into unrelated branches silently.
+
+### Two variants (only case 1 creates a PR)
+
+- **Authored artifact** — new or edited PRD / RES / ADR / plan content and
+  its riders. Commit (Conventional Commits), push
+  (`git push -u origin <doc-branch>`), open the PR
+  (`gh pr create --fill` — no `Closes` footer; body names the artifact
+  ids). **Merge consent rides the human gates, never a new blanket rule**:
+  - Interactive runs: ask via **AskUserQuestion** — "Merge now
+    (Recommended)" (squash-merge, then the mandatory main sync) or "Leave
+    open for review" (report the PR URL; **stay on the doc branch** so
+    dependent commands stack on it). A command whose gate just **ruled on**
+    exactly this content — comb's plan approval, or the decline that
+    records that verdict — merges without a second ask.
+  - `/hive:bumble --yolo`: auto-merge only PRs recording gate verdicts the
+    carve-out covers, for artifacts created during that run. Headless
+    without `--yolo`: never merge — leave the PR open and report it,
+    exactly as gates never auto-approve.
+- **Write-back** — mechanical bookkeeping only (issue numbers, status
+  flips, audit entries). Same branching, then PR + **immediate
+  auto-squash-merge, no ask**, any mode. A blocked merge → classify per
+  Merge failures below, stop, and hand the user the PR URL.
+
+### ID-collision check (before any Hive-driven merge)
+
+IDs are minted by globbing the local checkout, so two parallel branches can
+mint the same `ADR-0010` without a git conflict. Before merging **any doc
+PR that introduces a lifecycle artifact file** (`docs/prd/PRD-*`,
+`docs/research/RES-*`, `docs/adr/ADR-*`, `docs/plans/PLAN-*`) — authored or
+write-back-labelled alike (e.g. comb's Decline PR carries a new plan):
+
+1. `git fetch origin <default-branch>`, then list the artifact directory on
+   the remote default (e.g. `git ls-tree --name-only origin/<default-branch> docs/adr/`).
+2. If the new file's ID already exists there under a different file,
+   renumber before merging: rename the file to the next free ID and update
+   the frontmatter `id:` and **every** reference to the old ID on the
+   branch (docs, audit lines, plan fields).
+
+After every squash-merge, the mandatory main sync below applies.
+
 ## Branch / PR flow
 
-One issue = one branch = one squash-merged PR.
+One issue = one branch = one squash-merged PR, into a **base branch**
+`<base>`: during `/hive:swarm` that is the milestone integration branch
+(next section); outside a milestone it is the default branch.
 
-1. **Start from fresh main** (see sync rule below), then:
+1. **Start from fresh `<base>`** (see sync rule below), then:
    `git switch -c issue/<n>-<slug>`
 2. Implement, run the issue's verification command, commit
    (Conventional Commits).
 3. Push — `gh pr create` needs a pushed branch in non-interactive use:
    `git push -u origin issue/<n>-<slug>`
 4. Create the PR:
-   `gh pr create --fill --body "Closes #<n>"`
+   `gh pr create --fill --base <base> --body "Closes #<n>"`
    (`--body` overrides the fill body; the title still comes from the commits.
-   `Closes #<n>` auto-closes the issue on merge.)
+   `Closes #<n>` links the PR to the issue but **auto-closes only on
+   default-branch merges** — merging into a milestone branch closes
+   nothing, which is why swarm closes the issue explicitly after the
+   merge.)
 5. Merge:
    `gh pr merge --squash --delete-branch`
-6. **Sync local main — mandatory after EVERY squash-merge:**
+6. **Sync the local base — mandatory after EVERY squash-merge:**
 
 ```bash
-git switch main && git pull --ff-only origin main
+git switch <base> && git pull --ff-only origin <base>
 ```
 
-`gh pr merge` does not update local main. After a squash-merge, local main is
+`gh pr merge` does not update the local base. After a squash-merge, the
+local base is
 **always stale**; skipping the sync makes the next branch build on an old tree
-and blocks any later push from main. Run the sync before cutting the next
-branch and before any commit on main — no exceptions.
+and blocks any later push from it. Run the sync before cutting the next
+branch and before any commit on the base — no exceptions.
+
+## Milestone integration branch (`/hive:swarm`)
+
+One milestone = one integration branch = one final merge-commit PR to the
+default branch.
+
+- **Name**: `milestone/<milestone-number>-<slug>` (slug from the milestone
+  title, derived like issue slugs). Swarm cuts it from fresh main at
+  milestone start and pushes it (`git push -u origin <branch>`); on resume
+  an existing remote branch is reused, never re-cut.
+- **During the milestone**: it is `<base>` for every task PR above; the
+  milestone verification command runs on it after every merge.
+- **Final PR**: `gh pr create --base <default-branch> --head <branch>` —
+  merged with `gh pr merge <pr#> --merge --delete-branch` (a merge commit:
+  main keeps the per-task squashed commits; never squash the milestone,
+  never push the branch onto main directly). Its merge is a human gate in
+  swarm — even under `--yolo`.
+- **State probes** (resume-safe): `git ls-remote --heads origin
+  "milestone/<number>-*"` for the branch — **adopt the matched ref name**
+  as the canonical branch (the slug may have drifted since the cut); more
+  than one match → ambiguous, PAUSE. For the final PR, filter by the
+  number prefix (robust to slug drift and gh's 30-item default):
+  `gh pr list --base <default-branch> --state all --limit 1000 --json number,state,mergedAt,headRefName`,
+  matching `headRefName` that starts `milestone/<number>-`. Branch gone +
+  PR merged is the normal post-merge state, not an error.
 
 ## Merge failures
 

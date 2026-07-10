@@ -88,8 +88,10 @@ Ground rules that bind every step:
        write-backs must be clean in the working tree (`git status
        --porcelain` empty for those paths) **and** present on
        `origin/main` (fetch, then confirm the files on `origin/main`
-       carry the write-backs). Not committed or not pushed → resume at
-       Step 4.7.
+       carry the write-backs). An open write-back PR (head branch
+       `docs/PLAN-NNN-*`) carrying them counts as pending, not missing —
+       resume at Step 4.7 by merging that PR instead of recommitting.
+       Not committed or not pushed → resume at Step 4.7.
      - All complete → nothing to repair; fall through to the next rule.
      The human gate is not re-required on this path: `status:
      materialized` can only have been written after approval, and steps
@@ -98,8 +100,20 @@ Ground rules that bind every step:
      cleanly materialized) → that phase awaits execution — report the
      existing milestone/epic/issue numbers, point at
      `/hive:swarm <PRD-id>`, and stop.
-   - **No plan matches at all** → fresh run (first phase), continue with
-     Step 1.
+   - **No local plan matches, but an open doc PR may carry one** → before
+     declaring a fresh run, check
+     `gh pr list --state open --limit 1000 --json number,headRefName,files`
+     (the `--limit 1000` is load-bearing — gh's 30-PR default could hide
+     the very plan PR this probe exists to catch, per Step 1's truncation
+     rule) for a PR
+     whose head branch matches `docs/PLAN-*` or whose files touch
+     `docs/plans/PLAN-*.yaml`. A hit that belongs to this PRD (its plan
+     file's `prd:` is this PRD, or it also touches this PRD's file) →
+     **never mint a new PLAN id**: report the PR and ask via
+     **AskUserQuestion**
+     whether to check out its branch and resume there, merge it first and
+     resume on main, or abort. No hit → fresh run (first phase), continue
+     with Step 1.
    - **Every phase is implemented** → a new phase is a deliberate act:
      with `--new-phase`, continue with Step 1; without it, ask via
      **AskUserQuestion** whether to plan a new phase for this PRD
@@ -234,9 +248,12 @@ Record the verdict in the PRD's audit log (colony `Audit log` section):
 `plan-declined`, subject: PLAN-NNN. On a resume that re-poses this gate,
 skip the append when the log already records that verdict. An approval's
 entry rides the Step 4.2 commit; a Decline commits the audit log
-**together with the reviewed plan.yaml** (sync main first per
-`gh-conventions`, then push) before stopping — never split the entry from
-the plan it records.
+**together with the reviewed plan.yaml** through the doc commit flow
+(`hive:gh-conventions`) before stopping — the Decline verdict is the gate
+ruling on exactly this content, so the PR merges **without a second ask**
+per the doc commit flow (the symmetric case to Approve, not a blanket
+auto-merge); introducing a new plan file, it runs the **ID-collision
+check**. Never split the entry from the plan it records.
 
 ## Step 4 — Materialize (only after approval; resumable and IDEMPOTENT)
 
@@ -293,23 +310,40 @@ The mirror is human-facing provenance for people browsing GitHub. The
 authoritative link is the PRD's `milestones:` list — nothing parses the
 mirror for scheduling.
 
-### 4.2 Commit and push docs BEFORE creating any issues
+### 4.2 Get the docs onto the default branch BEFORE creating any issues
 
 Issue bodies link to the docs via full
 `https://github.com/<owner>/<repo>/blob/<default-branch>/...` URLs — those
 links 404 unless the docs are on the default branch first. So, before the first
-`gh issue create`:
+`gh issue create`, route through the doc commit flow (`hive:gh-conventions`):
 
-1. `git switch main && git pull --ff-only origin main` (never commit on a
-   stale main).
-2. Commit the reviewed plan.yaml, the PRD's audit log, and the PRD if its
-   file changed, e.g. `docs(plans): add PLAN-NNN for $ARGUMENTS`.
-3. `git push origin main`. If the push fails, stop and report — do not
-   create issues against unpushed docs.
+- **On the default branch**: commit the reviewed plan.yaml, the PRD's audit
+  log, and the PRD if its file changed (e.g.
+  `docs(plans): add PLAN-NNN for $ARGUMENTS`) on a doc branch, push, PR,
+  and **auto-squash-merge without a second ask** — the Step 3 Approve
+  verdict already covers exactly this content. The PR introduces the new
+  plan file, so the **ID-collision check applies** before the merge. Then
+  sync main. If the merge is blocked, stop and report the PR URL — do not
+  create issues against unmerged docs.
+- **On a doc-intended branch the user drives** (dedicated-branch
+  workflow): commit there, then **pause** — materialization needs the docs
+  on the default branch or every issue link 404s. Tell the user to merge
+  their branch (point at it, or its open PR) and re-run
+  `/hive:comb $ARGUMENTS`; Step 0 routes the resume back here via the
+  `reviewed` plan. Do not create any issues before that merge.
 
-Skip the commit if the docs are already committed and pushed (resume
-case, nothing staged) — but always verify main is synced and the plan
-file is on the remote before proceeding.
+Skip the commit if the docs are already merged (resume case, nothing
+staged) — but always verify main is synced and the plan file is on the
+remote default branch before proceeding.
+
+**Settle the canonical plan id.** The ID-collision check may have
+renumbered the plan file during the merge (a parallel run that reached
+main first). Re-derive `PLAN-NNN` from the plan file's **actual name on
+the merged default branch** and use that canonical id for every remaining
+step (4.3–4.7) — never carry the pre-merge id forward. If it changed from
+the id 4.1 stamped into the milestone-description mirror, correct that
+`plan:` line now via read-modify-write (**replace** the stale line, do not
+append a second one).
 
 ### 4.3 Epic issue
 
@@ -326,8 +360,8 @@ gh issue create --title "<epic.title>" --body "<epic.body>" --milestone "<milest
 The `hive:managed` label **and** the milestone are load-bearing —
 `/hive:swarm`'s epic discovery filters on both; an epic missing either is
 invisible to the build loop. The epic body must start with the
-crosslinking header block (full `blob/main` URLs; **Implements:** lists
-the PRD id itself).
+crosslinking header block (full `blob/<default-branch>` URLs;
+**Implements:** lists the PRD id itself).
 
 Capture the epic number from the create command's URL stdout: strict
 parse of exactly one `/issues/<number>` match — **fail on no match or
@@ -416,14 +450,25 @@ Append `plan-review: passed (PLAN-NNN)` to the milestone description:
 This marker is `/hive:swarm`'s deterministic start gate — without it the
 milestone is refused.
 
-### 4.7 Final commit and push
+### 4.7 Final write-back commit
 
-Sync main again if anything was merged meanwhile
+**Resume check first**: an interrupted 4.7 (or the Step 0.3 write-back
+resume path) may have already left an **open write-back PR** — head
+`docs/PLAN-NNN-*`, touching the plan.yaml/PRD/audit write-backs. Probe
+`gh pr list --state open --limit 1000 --json number,headRefName,files` for
+it; if found, **merge that existing PR** (auto-squash-merge, no ask) rather
+than recommitting, then sync main — never open a second write-back PR for
+the same materialization.
+
+Only if none exists: sync main again if anything was merged meanwhile
 (`git switch main && git pull --ff-only origin main`), then commit the
 write-backs (plan.yaml issue numbers + status, PRD frontmatter, audit
 log), e.g.
-`docs(plans): materialize PLAN-NNN into milestone <title>`, and
-`git push origin main`.
+`docs(plans): materialize PLAN-NNN into milestone <title>`, via the doc
+commit flow's **write-back variant** (`hive:gh-conventions`): doc branch
+off fresh main, push, PR, auto-squash-merge with no ask, sync main. A
+blocked merge → stop and report the PR URL; re-running resumes at the
+resume check above.
 
 ### 4.8 Glossary-gaps tracker (idempotent)
 

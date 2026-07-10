@@ -78,6 +78,17 @@ the draft and gating it: resume that ADR's step-7 acceptance gate first,
 before any new drafting — never allocate a fresh id for a decision an
 existing proposed draft already covers.
 
+**Open doc PR from an interrupted run** — the globs here only see the
+default branch; a prior waggle that ended on the Keep-open path leaves its
+ADR draft (and any supersede flip) on an **unmerged** doc branch, invisible
+to them. Before mining or minting, probe
+`gh pr list --state open --limit 1000 --json number,headRefName,files` for
+a PR whose head matches `docs/ADR-*` or whose files touch
+`docs/adr/ADR-*.md` for this PRD. A hit → **do not re-mine or re-mint**:
+report the PR and ask via **AskUserQuestion** whether to check out its
+branch and resume its step-7 acceptance gate there, merge it first and
+resume on the default branch, or abort.
+
 Also repair the Accept-path crash window: any `status: accepted` ADR with
 `derived-from:` this PRD whose id is missing from the PRD's `adrs:`
 frontmatter list means a prior run was interrupted mid-Accept — append the
@@ -287,20 +298,30 @@ is a **new** `/hive:waggle` run that supersedes it — never an edit.
 
 ## 8. Commit
 
-Sync main first per the `gh-conventions` skill (`git switch main && git pull
---ff-only origin main`) — never commit on a stale main. Then commit all of
-this run's doc changes together: new ADR files, the PRD frontmatter/Open
-Questions edits (or `docs/adr/DECISIONS.md` for a standalone run), any
-`superseded` flips, the PRD's audit log entries from step 7, plus the
-`ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from step 7. Conventional commit, e.g.:
+Persist all of this run's doc changes together through the **doc commit
+flow** (`hive:gh-conventions`, authored-artifact variant): new ADR files,
+the PRD frontmatter/Open Questions edits (or `docs/adr/DECISIONS.md` for a
+standalone run), any `superseded` flips, the PRD's audit log entries from
+step 7, plus the `ARCHITECTURE.md` and `CLAUDE.md` bedrock updates from
+step 7 — one commit, Conventional, e.g.:
 
 ```
 docs(adr): add ADR-0007 queue backend for PRD-003
 docs(adr): add ADR-0001 CI provider (repo-scoped)
 ```
 
+Per that flow: on the default branch this means a doc branch —
+`docs/ADR-NNNN-<slug>` (the first accepted id), or `docs/waggle-<PRD-id>`
+on an update-only run that accepts no new ADR (e.g. only a supersede flip
+or an Open-Questions edit) — push, PR (new ADR files →
+the ID-collision check applies before merging), then the merge ask —
+"Merge now (Recommended)" / "Leave open for review". Under
+`/hive:bumble --yolo` the ADR-acceptance verdicts the carve-out covered
+also carry merge consent — auto-merge, no ask. On a doc-intended branch,
+just commit there.
+
 Do not push issues, create issues, or touch anything under `.github` — this
-command produces documents only. (`/hive:comb` pushes docs before materializing.)
+command produces documents only.
 
 ## 9. Report
 
